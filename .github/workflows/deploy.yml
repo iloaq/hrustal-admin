@@ -47,7 +47,6 @@ jobs:
             package-lock.json
             prisma/
             next.config.ts
-            tailwind.config.ts
             postcss.config.mjs
             captain-definition
             Dockerfile
