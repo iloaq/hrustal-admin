@@ -5,12 +5,13 @@ WORKDIR /app
 # Установка зависимостей
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --only=production
 
 # Сборка приложения
 FROM base AS builder
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
-COPY --from=deps /app/node_modules ./node_modules
 RUN npm run build
 
 # Production-образ

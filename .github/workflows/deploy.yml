@@ -42,6 +42,7 @@ jobs:
           files: |
             .next/
             public/
+            src/
             package.json
             package-lock.json
             prisma/
