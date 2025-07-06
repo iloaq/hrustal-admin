@@ -40,7 +40,7 @@ export default function ProductionPage() {
       } else {
         setPlan([]);
       }
-    } catch (error) {
+    } catch {
       setPlan([]);
     } finally {
       setLoading(false);

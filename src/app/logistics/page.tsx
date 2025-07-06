@@ -1,18 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import jsPDF from 'jspdf';
+// import jsPDF from 'jspdf';
 
 // Функция для создания PDF с поддержкой кириллицы
-const createPDFWithCyrillic = () => {
-  const pdf = new jsPDF('p', 'mm', 'a4');
-  
-  // Настройка для поддержки кириллицы
-  pdf.setFont('helvetica');
-  pdf.setFontSize(12);
-  
-  return pdf;
-};
+// const createPDFWithCyrillic = () => {
+//   const pdf = new jsPDF('p', 'mm', 'a4');
+//   
+//   // Настройка для поддержки кириллицы
+//   pdf.setFont('helvetica');
+//   pdf.setFontSize(12);
+//   
+//   return pdf;
+// };
 
 // Функция для разбиения заявок на страницы
 const splitLeadsIntoPages = (leads: any[], maxLeadsPerPage: number = 20) => {
@@ -85,12 +85,12 @@ interface Lead {
   assigned_truck?: string;
 }
 
-interface RegionSummary {
-  name: string;
-  leads: Lead[];
-  totalLiters: number;
-  totalOrders: number;
-}
+// interface RegionSummary {
+//   name: string;
+//   leads: Lead[];
+//   totalLiters: number;
+//   totalOrders: number;
+// }
 
 type GroupByType = 'none' | 'region' | 'time' | 'truck';
 

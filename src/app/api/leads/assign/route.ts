@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 // Назначить машину для одной заявки
 export async function POST(request: Request) {
   try {
-    const { leadId, truck, deliveryDate, deliveryTime } = await request.json();
+    const { leadId, truck, deliveryTime } = await request.json();
     
     // Получаем заявку для проверки даты и времени
     const lead = await prisma.lead.findUnique({
@@ -100,7 +100,7 @@ export async function PUT(request: Request) {
     });
 
     // Распределяем по регионам
-    Object.entries(regionGroups).forEach(([region, regionLeads], regionIndex) => {
+    Object.entries(regionGroups).forEach(([, regionLeads], regionIndex) => {
       const truckIndex = regionIndex % trucks.length;
       regionLeads.forEach(lead => {
         assignments[lead.lead_id.toString()] = trucks[truckIndex];

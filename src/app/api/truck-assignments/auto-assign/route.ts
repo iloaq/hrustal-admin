@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     });
 
     // Распределяем по регионам
-    Object.entries(regionGroups).forEach(([region, regionLeads], regionIndex) => {
+    Object.entries(regionGroups).forEach(([, regionLeads], regionIndex) => {
       const truckIndex = regionIndex % trucks.length;
       regionLeads.forEach(lead => {
         assignments[lead.lead_id.toString()] = trucks[truckIndex];
