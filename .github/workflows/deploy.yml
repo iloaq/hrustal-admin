@@ -52,7 +52,6 @@ jobs:
             next.config.ts
             captain-definition
             Dockerfile
-            .env
           outPath: deploy.tar
 
       - name: Deploy App to CapRover
