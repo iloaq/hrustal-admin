@@ -176,7 +176,6 @@ type GroupByType = 'none' | 'region' | 'time' | 'truck';
 
 export default function LogisticsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [truckLoadings, setTruckLoadings] = useState<TruckLoading[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTime, setSelectedTime] = useState('all');
@@ -187,7 +186,6 @@ export default function LogisticsPage() {
 
   useEffect(() => {
     fetchLeads();
-    fetchTruckLoadings();
   }, [selectedDate, selectedTime]);
 
   const fetchLeads = async () => {
@@ -209,23 +207,7 @@ export default function LogisticsPage() {
     }
   };
 
-  const fetchTruckLoadings = async () => {
-    try {
-      const url = selectedTime === 'all' 
-        ? `/api/truck-loading?date=${selectedDate}`
-        : `/api/truck-loading?date=${selectedDate}&time=${selectedTime}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        setTruckLoadings(data);
-      } else {
-        setTruckLoadings([]);
-      }
-    } catch (error) {
-      console.error('Error fetching truck loadings:', error);
-      setTruckLoadings([]);
-    }
-  };
+
 
   // Фильтруем заявки
   const filteredLeads = leads.filter(lead => {

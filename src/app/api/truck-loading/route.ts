@@ -25,17 +25,13 @@ export async function GET(request: NextRequest) {
     nextDay.setDate(nextDay.getDate() + 1);
 
     // Получаем существующие записи из базы
-    let whereClause: any = {
+    const whereClause: any = {
       loading_date: {
         gte: loadingDate,
         lt: nextDay
-      }
+      },
+      ...(time && time !== 'all' && { time_slot: time })
     };
-
-    // Фильтруем по времени если указано
-    if (time && time !== 'all') {
-      whereClause.time_slot = time;
-    }
 
     const existingLoadings = await prisma.truckLoading.findMany({
       where: whereClause,

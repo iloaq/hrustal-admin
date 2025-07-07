@@ -23,9 +23,28 @@ function serializeLeads(leads: any[]) {
   }));
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const date = searchParams.get('date');
+    
+    // Базовые условия запроса
+    const whereCondition: any = {};
+    
+    // Если указана дата, фильтруем по дате доставки
+    if (date) {
+      const deliveryDate = new Date(date);
+      const nextDay = new Date(deliveryDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      
+      whereCondition.delivery_date = {
+        gte: deliveryDate,
+        lt: nextDay
+      };
+    }
+    
     const leads = await prisma.lead.findMany({
+      where: whereCondition,
       include: {
         truck_assignments: {
           where: {

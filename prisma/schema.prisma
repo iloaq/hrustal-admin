@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -15,86 +9,117 @@ datasource db {
 }
 
 model Lead {
-  lead_id             BigInt   @id @map("lead_id")
-  name                String?  @db.VarChar(255)
-  status_id           BigInt?
-  status_name         String?  @db.VarChar(255)
-  responsible_user_id BigInt?
-  responsible_user_name String? @db.VarChar(255)
-  created_at          DateTime? @db.Timestamp(0)
-  updated_at          DateTime? @db.Timestamp(0)
-  delivery_date       DateTime? @db.Date
-  products            Json?
-  total_liters        Decimal?
-  info                Json?
-  delivery_time       String?  @db.VarChar(255)
-  na_zamenu           Boolean?
-  oplata              String?  @db.VarChar(255)
-  comment             String?  @db.VarChar(600)
-  odin_s              String?  @db.VarChar(255)
-
-  // Связи
-  truck_assignments    TruckAssignment[]
-  production_orders    ProductionOrder[]
+  lead_id               BigInt            @id @map("lead_id")
+  name                  String?           @db.VarChar(255)
+  status_id             BigInt?
+  status_name           String?           @db.VarChar(255)
+  responsible_user_id   BigInt?
+  responsible_user_name String?           @db.VarChar(255)
+  created_at            DateTime?         @db.Timestamp(0)
+  updated_at            DateTime?         @db.Timestamp(0)
+  delivery_date         DateTime?         @db.Date
+  products              Json?
+  total_liters          Decimal?
+  info                  Json?
+  delivery_time         String?           @db.VarChar(255)
+  na_zamenu             Boolean?
+  oplata                String?           @db.VarChar(255)
+  comment               String?           @db.VarChar(600)
+  odin_s                String?           @db.VarChar(255)
+  production_orders     ProductionOrder[]
+  truck_assignments     TruckAssignment[]
 
   @@map("leads")
 }
 
 model TruckAssignment {
-  id                  BigInt   @id @default(autoincrement())
-  lead_id             BigInt
-  truck_name          String   @db.VarChar(100)
-  delivery_date       DateTime @db.Date
-  delivery_time       String   @db.VarChar(50)
-  assigned_at         DateTime @default(now())
-  assigned_by         String?  @db.VarChar(100)
-  status              String   @default("active") @db.VarChar(50) // active, completed, cancelled
-  notes               String?  @db.VarChar(500)
-  
-  // Связь с заявкой
-  lead                Lead     @relation(fields: [lead_id], references: [lead_id], onDelete: Cascade)
+  id            BigInt   @id @default(autoincrement())
+  lead_id       BigInt
+  truck_name    String   @db.VarChar(100)
+  delivery_date DateTime @db.Date
+  delivery_time String   @db.VarChar(50)
+  assigned_at   DateTime @default(now())
+  assigned_by   String?  @db.VarChar(100)
+  status        String   @default("active") @db.VarChar(50)
+  notes         String?  @db.VarChar(500)
+  lead          Lead     @relation(fields: [lead_id], references: [lead_id], onDelete: Cascade)
 
+  @@unique([lead_id, delivery_date])
   @@map("truck_assignments")
-  @@unique([lead_id, delivery_date]) // Одна заявка на одну дату
 }
 
-// Справочник товаров
 model Product {
-  id                  BigInt   @id @default(autoincrement())
-  name                String   @db.VarChar(100) // Малыш, Хрусталь, Селен
-  type                String   @db.VarChar(50)  // water, bottle, cup, etc.
-  volume              Decimal? // Объем в литрах (19л для воды)
-  price               Decimal? // Цена
-  is_active           Boolean  @default(true)
-  created_at          DateTime @default(now())
-  updated_at          DateTime @updatedAt
-  
-  // Связи
-  production_orders   ProductionOrder[]
-  
+  id                BigInt            @id @default(autoincrement())
+  name              String            @db.VarChar(100)
+  type              String            @db.VarChar(50)
+  volume            Decimal?
+  price             Decimal?
+  is_active         Boolean           @default(true)
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @updatedAt
+  production_orders ProductionOrder[]
+
   @@map("products")
 }
 
-// Производственные заказы
 model ProductionOrder {
-  id                  BigInt   @id @default(autoincrement())
-  lead_id             BigInt
-  product_id          BigInt
-  quantity            Int      // Количество к производству
-  status              String   @default("pending") @db.VarChar(50) // pending, in_progress, completed, cancelled
-  priority            String   @default("normal") @db.VarChar(50)  // low, normal, high, urgent
-  production_date     DateTime @db.Date
-  delivery_date       DateTime @db.Date
-  created_at          DateTime @default(now())
-  updated_at          DateTime @updatedAt
-  completed_at        DateTime?
-  notes               String?  @db.VarChar(500)
-  
-  // Связи
-  lead                Lead     @relation(fields: [lead_id], references: [lead_id], onDelete: Cascade)
-  product             Product  @relation(fields: [product_id], references: [id])
-  
+  id              BigInt    @id @default(autoincrement())
+  lead_id         BigInt
+  product_id      BigInt
+  quantity        Int
+  status          String    @default("pending") @db.VarChar(50)
+  priority        String    @default("normal") @db.VarChar(50)
+  production_date DateTime  @db.Date
+  delivery_date   DateTime  @db.Date
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  completed_at    DateTime?
+  notes           String?   @db.VarChar(500)
+  lead            Lead      @relation(fields: [lead_id], references: [lead_id], onDelete: Cascade)
+  product         Product   @relation(fields: [product_id], references: [id])
+
   @@map("production_orders")
 }
 
+model TruckLoading {
+  id                 BigInt   @id @default(autoincrement())
+  loading_date       DateTime @db.Date
+  truck_name         String   @db.VarChar(100)
+  truck_area         String   @db.VarChar(100)
+  time_slot          String   @db.VarChar(50)
+  hrustalnaya_orders Int      @default(0)
+  malysh_orders      Int      @default(0)
+  selen_orders       Int      @default(0)
+  hrustalnaya_free   Int      @default(0)
+  malysh_free        Int      @default(0)
+  selen_free         Int      @default(0)
+  notes              String?  @db.VarChar(500)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  created_by         String?  @db.VarChar(100)
 
+  @@unique([loading_date, truck_name, time_slot])
+  @@index([loading_date])
+  @@map("truck_loadings")
+}
+
+// Производство по дням и времени
+model ProductionSession {
+  id                  BigInt   @id @default(autoincrement())
+  date                DateTime @db.Date
+  time_slot           String   @db.VarChar(20) // Утро, День, Вечер
+  
+  // Произведено
+  hrustalnaya_produced Int     @default(0)
+  malysh_produced     Int     @default(0)
+  selen_produced      Int     @default(0)
+  
+  // Свободные тары
+  bottles_19l_free    Int     @default(100)
+  
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+  
+  @@unique([date, time_slot])
+  @@map("production_sessions")
+}
