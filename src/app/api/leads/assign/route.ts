@@ -65,13 +65,15 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const { date, time } = await request.json();
+    console.log('Auto-assign request:', { date, time });
     
     // Преобразуем строку даты в объект Date и создаем диапазон для поиска за весь день
     const deliveryDate = new Date(date);
     const nextDay = new Date(deliveryDate);
     nextDay.setDate(nextDay.getDate() + 1);
+    console.log('Date range:', { deliveryDate, nextDay });
     
-    // Получаем заявки для указанной даты и времени
+    // Получаем заявки для указанной даты и времени, исключая уже назначенные
     const leads = await prisma.lead.findMany({
       where: {
         delivery_date: {
@@ -80,36 +82,76 @@ export async function PUT(request: Request) {
         },
         ...(time !== 'all' && { delivery_time: time })
       },
+      include: {
+        truck_assignments: {
+          where: {
+            status: 'active'
+          }
+        }
+      },
       orderBy: {
         created_at: 'desc'
       }
     });
 
-    const trucks = ['Машина 1', 'Машина 2', 'Машина 3', 'Машина 4', 'Машина 5'];
+    // Фильтруем только неназначенные заявки (нет назначений или пустое название машины)
+    const unassignedLeads = leads.filter(lead => 
+      lead.truck_assignments.length === 0 || 
+      lead.truck_assignments.every(assignment => !assignment.truck_name || assignment.truck_name.trim() === '')
+    );
+    console.log('Total leads found:', leads.length);
+    console.log('Unassigned leads:', unassignedLeads.length);
+    console.log('Sample lead:', leads[0]);
+
+    // Логика распределения машин по районам
+    const truckAssignments: {[key: string]: string} = {
+      'Центр': 'Машина 1',
+      'Вокзал': 'Машина 2', 
+      'Центр ПЗ': 'Машина 3',
+      'Центр П/З': 'Машина 3', // альтернативное написание
+      'Вокзал ПЗ': 'Машина 4',
+      'Вокзал П/З': 'Машина 4', // альтернативное написание
+      // Машина 5 - универсальная
+    };
+
     const assignments: {[key: string]: string} = {};
-    
-    // Группируем по регионам для лучшего распределения
-    const regionGroups: {[key: string]: any[]} = {};
-    leads.forEach(lead => {
+    const truckLoads: {[key: string]: number} = {
+      'Машина 1': 0,
+      'Машина 2': 0,
+      'Машина 3': 0,
+      'Машина 4': 0,
+      'Машина 5': 0
+    };
+
+    // Первый проход - назначаем по специализации районов
+    unassignedLeads.forEach(lead => {
       const info = lead.info as any;
-      const region = info?.region || 'Неизвестный регион';
-      if (!regionGroups[region]) {
-        regionGroups[region] = [];
+      const region = info?.region;
+      console.log(`Lead ${lead.lead_id}: region="${region}"`);
+      if (region && truckAssignments[region]) {
+        const assignedTruck = truckAssignments[region];
+        assignments[lead.lead_id.toString()] = assignedTruck;
+        truckLoads[assignedTruck]++;
+        console.log(`Assigned lead ${lead.lead_id} to ${assignedTruck} (region: ${region})`);
       }
-      regionGroups[region].push(lead);
     });
 
-    // Распределяем по регионам
-    Object.entries(regionGroups).forEach(([, regionLeads], regionIndex) => {
-      const truckIndex = regionIndex % trucks.length;
-      regionLeads.forEach(lead => {
-        assignments[lead.lead_id.toString()] = trucks[truckIndex];
-      });
+    // Второй проход - оставшиеся заявки назначаем на наименее загруженную машину
+    unassignedLeads.forEach(lead => {
+      const leadId = lead.lead_id.toString();
+      if (!assignments[leadId]) {
+        // Находим наименее загруженную машину
+        const leastLoadedTruck = Object.entries(truckLoads)
+          .sort(([,a], [,b]) => a - b)[0][0];
+        
+        assignments[leadId] = leastLoadedTruck;
+        truckLoads[leastLoadedTruck]++;
+      }
     });
 
     // Сохраняем назначения в базу данных через TruckAssignment
     const assignmentPromises = Object.entries(assignments).map(([leadId, truck]) => {
-      const lead = leads.find(l => l.lead_id.toString() === leadId);
+      const lead = unassignedLeads.find(l => l.lead_id.toString() === leadId);
       if (!lead) return null;
       
       return prisma.truckAssignment.upsert({
@@ -138,10 +180,21 @@ export async function PUT(request: Request) {
 
     await Promise.all(assignmentPromises.filter(Boolean));
     
+    console.log('Final assignments:', assignments);
+    console.log('Final truck loads:', truckLoads);
+    
     return NextResponse.json({ 
       success: true, 
       assignments,
-      message: `Распределено ${Object.keys(assignments).length} заявок`
+      truckLoads,
+      message: `Распределено ${Object.keys(assignments).length} заявок`,
+      details: {
+        'Машина 1 (Центр)': truckLoads['Машина 1'],
+        'Машина 2 (Вокзал)': truckLoads['Машина 2'],
+        'Машина 3 (Центр ПЗ)': truckLoads['Машина 3'],
+        'Машина 4 (Вокзал ПЗ)': truckLoads['Машина 4'],
+        'Машина 5 (Универсальная)': truckLoads['Машина 5']
+      }
     });
   } catch (error) {
     console.error('Error auto-assigning trucks:', error);

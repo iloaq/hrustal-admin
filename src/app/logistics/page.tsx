@@ -25,17 +25,60 @@ const splitLeadsIntoPages = (leads: any[], maxLeadsPerPage: number = 20) => {
 
 // Функция для создания таблицы заявок с разбивкой на страницы
 const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
+  // Считаем общую статистику для таблицы
+  const calculateTotalStats = () => {
+    const stats = { 
+      hrustalnaya: 0, 
+      malysh: 0, 
+      selen: 0, 
+      pompa_meh: 0, 
+      pompa_el: 0, 
+      stakanchiki: 0, 
+      totalSum: 0 
+    };
+    
+    leads.forEach(lead => {
+      Object.values(lead.products || {}).forEach((product: any) => {
+        const productName = product.name.toLowerCase();
+        const quantity = parseInt(product.quantity) || 0;
+        const price = parseFloat(product.price || '0');
+        const total = quantity * price;
+        
+        stats.totalSum += total;
+        
+        if (productName.includes('хрустальная')) {
+          stats.hrustalnaya += quantity;
+        } else if (productName.includes('малыш')) {
+          stats.malysh += quantity;
+        } else if (productName.includes('селен')) {
+          stats.selen += quantity;
+        } else if (productName.includes('помпа механическая') || productName.includes('механическая помпа')) {
+          stats.pompa_meh += quantity;
+        } else if (productName.includes('помпа электрическая') || productName.includes('электрическая помпа')) {
+          stats.pompa_el += quantity;
+        } else if (productName.includes('стаканчик') || productName.includes('стакан')) {
+          stats.stakanchiki += quantity;
+        }
+      });
+    });
+    
+    return stats;
+  };
+
+  const totalStats = calculateTotalStats();
+
   let tableHTML = `
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; page-break-inside: avoid;">
       <thead>
         <tr style="background-color: #f5f5f5;">
           <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 5%;">№</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 20%;">Адрес доставки</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 15%;">Клиент</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 20%;">Адрес</th>
           <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 12%;">Телефон</th>
           <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 8%;">Время</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 25%;">Товары</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 15%;">Подпись</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 20%;">Товары</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 10%;">Вид оплаты</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 15%;">Комментарий</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 10%;">Сумма</th>
         </tr>
       </thead>
       <tbody>
@@ -47,25 +90,42 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
       `${product.name} - ${product.quantity} шт.`
     ).join(', ');
     
+    // Считаем сумму из продуктов для этой заявки
+    const leadSum = products.reduce((sum: number, product: any) => {
+      const quantity = parseInt(product.quantity) || 0;
+      const price = parseFloat(product.price || '0');
+      return sum + (quantity * price);
+    }, 0);
+    
     tableHTML += `
       <tr style="page-break-inside: avoid;">
         <td style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; font-weight: bold;">${startIndex + index + 1}</td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">
-          <strong>${lead.info?.region || ''}</strong><br>
-          ${lead.info?.delivery_address || ''}
-        </td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.name}</td>
+        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.info?.delivery_address || ''}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.info?.phone || ''}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.delivery_time}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px;">${productsList}</td>
-        <td style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; min-height: 30px;">
-          <div style="border-bottom: 1px solid #999; height: 20px;"></div>
-        </td>
+        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.oplata || ''}</td>
+        <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px;">${lead.comment || ''}</td>
+        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: right;">${leadSum} ₸</td>
       </tr>
     `;
   });
   
+  // Добавляем итоговую строку
   tableHTML += `
+        <tr style="background-color: #f0f0f0; font-weight: bold;">
+          <td colspan="4" style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px;">ИТОГО:</td>
+          <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px;">
+            Хрустальная: ${totalStats.hrustalnaya} шт.<br>
+            Малыш: ${totalStats.malysh} шт.<br>
+            Селен: ${totalStats.selen} шт.<br>
+            Помпа мех.: ${totalStats.pompa_meh} шт.<br>
+            Помпа эл.: ${totalStats.pompa_el} шт.<br>
+            Стаканчики: ${totalStats.stakanchiki} шт.
+          </td>
+          <td colspan="2" style="border: 1px solid #ccc; padding: 8px; font-size: 12px;"></td>
+          <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: right;">${totalStats.totalSum} ₸</td>
+        </tr>
       </tbody>
     </table>
   `;
@@ -83,6 +143,26 @@ interface Lead {
   status_name: string;
   products: any;
   assigned_truck?: string;
+  oplata?: string; // способ оплаты
+  comment?: string; // комментарий
+  na_zamenu?: boolean; // на замену
+  price?: string; // цена
+}
+
+interface TruckLoading {
+  id: string;
+  loading_date: string;
+  truck_name: string;
+  truck_area: string;
+  time_slot: string;
+  hrustalnaya_orders: number;
+  malysh_orders: number;
+  hrustalnaya_free: number;
+  malysh_free: number;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
 }
 
 // interface RegionSummary {
@@ -96,6 +176,7 @@ type GroupByType = 'none' | 'region' | 'time' | 'truck';
 
 export default function LogisticsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [truckLoadings, setTruckLoadings] = useState<TruckLoading[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTime, setSelectedTime] = useState('all');
@@ -106,7 +187,8 @@ export default function LogisticsPage() {
 
   useEffect(() => {
     fetchLeads();
-  }, []);
+    fetchTruckLoadings();
+  }, [selectedDate, selectedTime]);
 
   const fetchLeads = async () => {
     try {
@@ -127,6 +209,24 @@ export default function LogisticsPage() {
     }
   };
 
+  const fetchTruckLoadings = async () => {
+    try {
+      const url = selectedTime === 'all' 
+        ? `/api/truck-loading?date=${selectedDate}`
+        : `/api/truck-loading?date=${selectedDate}&time=${selectedTime}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setTruckLoadings(data);
+      } else {
+        setTruckLoadings([]);
+      }
+    } catch (error) {
+      console.error('Error fetching truck loadings:', error);
+      setTruckLoadings([]);
+    }
+  };
+
   // Фильтруем заявки
   const filteredLeads = leads.filter(lead => {
     const dateMatch = lead.delivery_date?.startsWith(selectedDate);
@@ -143,6 +243,46 @@ export default function LogisticsPage() {
   // Получаем уникальные машины
   const trucks = Array.from(new Set(leads.map(lead => lead.assigned_truck).filter(Boolean)));
 
+  // Функция для подсчета товаров и общей суммы
+  const calculateProducts = (leads: Lead[]) => {
+    const productStats = { 
+      hrustalnaya: 0, 
+      malysh: 0, 
+      selen: 0, 
+      pompa_meh: 0, 
+      pompa_el: 0, 
+      stakanchiki: 0, 
+      totalSum: 0 
+    };
+    
+    leads.forEach(lead => {
+      Object.values(lead.products || {}).forEach((product: any) => {
+        const productName = product.name.toLowerCase();
+        const quantity = parseInt(product.quantity) || 0;
+        const price = parseFloat(product.price || '0');
+        const total = quantity * price;
+        
+        productStats.totalSum += total;
+        
+        if (productName.includes('хрустальная')) {
+          productStats.hrustalnaya += quantity;
+        } else if (productName.includes('малыш')) {
+          productStats.malysh += quantity;
+        } else if (productName.includes('селен')) {
+          productStats.selen += quantity;
+        } else if (productName.includes('помпа механическая') || productName.includes('механическая помпа')) {
+          productStats.pompa_meh += quantity;
+        } else if (productName.includes('помпа электрическая') || productName.includes('электрическая помпа')) {
+          productStats.pompa_el += quantity;
+        } else if (productName.includes('стаканчик') || productName.includes('стакан')) {
+          productStats.stakanchiki += quantity;
+        }
+      });
+    });
+    
+    return productStats;
+  };
+
   // Группируем по регионам
   const groupByRegion = (leads: Lead[]) => {
     const regions: {[key: string]: Lead[]} = {};
@@ -155,12 +295,17 @@ export default function LogisticsPage() {
       regions[region].push(lead);
     });
     
-    return Object.entries(regions).map(([name, leads]) => ({
-      name,
-      leads,
-      totalLiters: leads.reduce((sum, lead) => sum + parseFloat(lead.total_liters || '0'), 0),
-      totalOrders: leads.length
-    }));
+    return Object.entries(regions).map(([name, leads]) => {
+      const products = calculateProducts(leads);
+      return {
+        name,
+        leads,
+        totalLiters: leads.reduce((sum, lead) => sum + parseFloat(lead.total_liters || '0'), 0),
+        totalOrders: leads.length,
+        totalSum: products.totalSum,
+        products
+      };
+    });
   };
 
   // Группируем по времени
@@ -175,12 +320,17 @@ export default function LogisticsPage() {
       timeGroups[time].push(lead);
     });
     
-    return Object.entries(timeGroups).map(([time, leads]) => ({
-      name: time,
-      leads,
-      totalLiters: leads.reduce((sum, lead) => sum + parseFloat(lead.total_liters || '0'), 0),
-      totalOrders: leads.length
-    }));
+    return Object.entries(timeGroups).map(([time, leads]) => {
+      const products = calculateProducts(leads);
+      return {
+        name: time,
+        leads,
+        totalLiters: leads.reduce((sum, lead) => sum + parseFloat(lead.total_liters || '0'), 0),
+        totalOrders: leads.length,
+        totalSum: products.totalSum,
+        products
+      };
+    });
   };
 
   // Группируем по машинам
@@ -195,12 +345,17 @@ export default function LogisticsPage() {
       truckGroups[truck].push(lead);
     });
     
-    return Object.entries(truckGroups).map(([truck, leads]) => ({
-      name: truck,
-      leads,
-      totalLiters: leads.reduce((sum, lead) => sum + parseFloat(lead.total_liters || '0'), 0),
-      totalOrders: leads.length
-    }));
+    return Object.entries(truckGroups).map(([truck, leads]) => {
+      const products = calculateProducts(leads);
+      return {
+        name: truck,
+        leads,
+        totalLiters: leads.reduce((sum, lead) => sum + parseFloat(lead.total_liters || '0'), 0),
+        totalOrders: leads.length,
+        totalSum: products.totalSum,
+        products
+      };
+    });
   };
 
   // Получаем сгруппированные данные
@@ -246,7 +401,13 @@ export default function LogisticsPage() {
       const result = await response.json();
       
       if (result.success) {
-        alert(`Успешно распределено ${Object.keys(result.assignments).length} заявок!`);
+        const details = result.details;
+        alert(`Успешно распределено ${Object.keys(result.assignments).length} заявок по машинам:\n` +
+              `Машина 1 (Центр): ${details['Машина 1 (Центр)']} заявок\n` +
+              `Машина 2 (Вокзал): ${details['Машина 2 (Вокзал)']} заявок\n` +
+              `Машина 3 (Центр ПЗ): ${details['Машина 3 (Центр ПЗ)']} заявок\n` +
+              `Машина 4 (Вокзал ПЗ): ${details['Машина 4 (Вокзал ПЗ)']} заявок\n` +
+              `Машина 5 (Универсальная): ${details['Машина 5 (Универсальная)']} заявок`);
         fetchLeads();
       } else {
         alert('Ошибка при автоматическом распределении');
@@ -391,9 +552,37 @@ export default function LogisticsPage() {
                 onClick={autoAssignToTrucks}
                 disabled={autoAssigning}
                 className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                title="Машина 1→Центр, Машина 2→Вокзал, Машина 3→Центр ПЗ/П/З, Машина 4→Вокзал ПЗ/П/З, Машина 5→Универсальная"
               >
                 {autoAssigning ? 'Распределяем...' : 'Автораспределение'}
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Информация о распределении машин */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Специализация машин по районам:</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs text-gray-600">
+            <div className="flex items-center">
+              <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+              <span>Машина 1 → Центр</span>
+            </div>
+            <div className="flex items-center">
+              <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+              <span>Машина 2 → Вокзал</span>
+            </div>
+            <div className="flex items-center">
+              <span className="inline-block w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+              <span>Машина 3 → Центр ПЗ/П/З</span>
+            </div>
+            <div className="flex items-center">
+              <span className="inline-block w-3 h-3 bg-orange-500 rounded-full mr-2"></span>
+              <span>Машина 4 → Вокзал ПЗ/П/З</span>
+            </div>
+            <div className="flex items-center">
+              <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+              <span>Машина 5 → Универсальная</span>
             </div>
           </div>
         </div>
@@ -467,85 +656,17 @@ export default function LogisticsPage() {
                     
                     console.log('Группы по машинам:', truckGroups);
                     
-                    // Если нет назначенных заявок, создаем общий лист
+                    // Проверяем есть ли назначенные заявки
                     if (Object.keys(truckGroups).length === 0 || 
-                        (Object.keys(truckGroups).length === 1 && truckGroups['Не назначена'])) {
-                      // Создаем общий маршрутный лист для всех заявок
-                      if (filteredLeads.length > 0) {
-                        // Разбиваем заявки на страницы
-                        const pages = splitLeadsIntoPages(filteredLeads, 20);
-                        
-                        pages.forEach((pageLeads, pageIndex) => {
-                          const startIndex = pageIndex * 20;
-                          const isLastPage = pageIndex === pages.length - 1;
-                          
-                          htmlContent += `
-                            <div style="page-break-after: ${isLastPage ? 'always' : 'always'}; padding: 20px; font-family: Arial, sans-serif; background: white;">
-                              <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;">
-                                <h1 style="margin: 0; font-size: 24px; color: #333; font-weight: bold;">ОБЩИЙ МАРШРУТНЫЙ ЛИСТ</h1>
-                                <h2 style="margin: 5px 0; font-size: 18px; color: #666;">Все заявки (не назначены на машины)</h2>
-                                <p style="margin: 5px 0; font-size: 14px; color: #666;">Дата: ${new Date().toLocaleDateString('ru-RU')}</p>
-                                <p style="margin: 5px 0; font-size: 14px; color: #666;">Страница ${pageIndex + 1} из ${pages.length}</p>
-                              </div>
-                              
-                              <div style="margin-bottom: 20px;">
-                                <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px;">
-                                  Все заявки (${filteredLeads.length} адресов) - Страница ${pageIndex + 1}
-                                </h3>
-                                
-                                ${createLeadsTableHTML(pageLeads, startIndex)}
-                              </div>
-                              
-                              ${isLastPage ? `
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                                  <div style="border: 1px solid #ccc; padding: 10px;">
-                                    <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">Информация о водителе</h4>
-                                    <p style="margin: 5px 0; font-size: 12px;"><strong>ФИО водителя:</strong> _________________</p>
-                                    <p style="margin: 5px 0; font-size: 12px;"><strong>Номер телефона:</strong> _________________</p>
-                                    <p style="margin: 5px 0; font-size: 12px;"><strong>Время выезда:</strong> _________________</p>
-                                  </div>
-                                  
-                                  <div style="border: 1px solid #ccc; padding: 10px;">
-                                    <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">Информация о машине</h4>
-                                    <p style="margin: 5px 0; font-size: 12px;"><strong>Марка/модель:</strong> _________________</p>
-                                    <p style="margin: 5px 0; font-size: 12px;"><strong>Гос. номер:</strong> _________________</p>
-                                    <p style="margin: 5px 0; font-size: 12px;"><strong>Пробег:</strong> _________________ км</p>
-                                  </div>
-                                </div>
-                                
-                                <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
-                                  <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">Примечания</h4>
-                                  <div style="border-bottom: 1px solid #999; height: 60px; padding: 5px; font-size: 12px; color: #666;">
-                                    _________________________________________________________________<br>
-                                    _________________________________________________________________<br>
-                                    _________________________________________________________________
-                                  </div>
-                                </div>
-                                
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                                  <div style="text-align: center;">
-                                    <p style="margin: 5px 0; font-size: 12px;">Подпись водителя</p>
-                                    <div style="border-bottom: 1px solid #999; height: 30px; margin: 0 auto; width: 200px;"></div>
-                                  </div>
-                                  <div style="text-align: center;">
-                                    <p style="margin: 5px 0; font-size: 12px;">Подпись диспетчера</p>
-                                    <div style="border-bottom: 1px solid #999; height: 30px; margin: 0 auto; width: 200px;"></div>
-                                  </div>
-                                </div>
-                              ` : ''}
-                            </div>
-                          `;
-                        });
-                      } else {
-                        alert('Нет заявок для создания маршрутного листа.');
-                        return;
-                      }
+                        (Object.keys(truckGroups).length === 1 && truckGroups['Не назначена'] && truckGroups['Не назначена'].length === filteredLeads.length)) {
+                      alert('Нет заявок, назначенных на конкретные машины. Назначьте заявки на машины перед созданием маршрутных листов.');
+                      return;
                     }
                     
                     // Создаем маршрутный лист для каждой машины
                     Object.entries(truckGroups).forEach(([truck, leads]) => {
-                      // Пропускаем только если нет заявок
-                      if (leads.length === 0) return;
+                      // Пропускаем если нет заявок или машина не назначена
+                      if (leads.length === 0 || truck === 'Не назначена') return;
                       
                       console.log(`Создаем маршрутный лист для машины: ${truck}, заявок: ${leads.length}`);
                       
@@ -558,58 +679,20 @@ export default function LogisticsPage() {
                         
                         htmlContent += `
                           <div style="page-break-after: ${isLastPage ? 'always' : 'always'}; padding: 20px; font-family: Arial, sans-serif; background: white;">
-                            <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;">
-                              <h1 style="margin: 0; font-size: 24px; color: #333; font-weight: bold;">МАРШРУТНЫЙ ЛИСТ</h1>
-                              <h2 style="margin: 5px 0; font-size: 18px; color: #666;">${truck}</h2>
-                              <p style="margin: 5px 0; font-size: 14px; color: #666;">Дата: ${new Date().toLocaleDateString('ru-RU')}</p>
-                              <p style="margin: 5px 0; font-size: 14px; color: #666;">Страница ${pageIndex + 1} из ${pages.length}</p>
+                            <div style="margin-bottom: 15px;">
+                              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 8px;">
+                                <h2 style="margin: 0; font-size: 16px; color: #333;">${truck}</h2>
+                                <div style="font-size: 14px; color: #666;">
+                                  <span>Дата: ${selectedDate}</span>
+                                  <span style="margin-left: 20px;">Страница ${pageIndex + 1}</span>
+                                  <span style="margin-left: 20px;">${leads.length} адресов</span>
+                                </div>
+                              </div>
                             </div>
                             
                             <div style="margin-bottom: 20px;">
-                              <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px;">
-                                Маршрут доставки (${leads.length} адресов) - Страница ${pageIndex + 1}
-                              </h3>
-                              
                               ${createLeadsTableHTML(pageLeads, startIndex)}
                             </div>
-                            
-                            ${isLastPage ? `
-                              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                                <div style="border: 1px solid #ccc; padding: 10px;">
-                                  <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">Информация о водителе</h4>
-                                  <p style="margin: 5px 0; font-size: 12px;"><strong>ФИО водителя:</strong> _________________</p>
-                                  <p style="margin: 5px 0; font-size: 12px;"><strong>Номер телефона:</strong> _________________</p>
-                                  <p style="margin: 5px 0; font-size: 12px;"><strong>Время выезда:</strong> _________________</p>
-                                </div>
-                                
-                                <div style="border: 1px solid #ccc; padding: 10px;">
-                                  <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">Информация о машине</h4>
-                                  <p style="margin: 5px 0; font-size: 12px;"><strong>Марка/модель:</strong> _________________</p>
-                                  <p style="margin: 5px 0; font-size: 12px;"><strong>Гос. номер:</strong> _________________</p>
-                                  <p style="margin: 5px 0; font-size: 12px;"><strong>Пробег:</strong> _________________ км</p>
-                                </div>
-                              </div>
-                              
-                              <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
-                                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">Примечания</h4>
-                                <div style="border-bottom: 1px solid #999; height: 60px; padding: 5px; font-size: 12px; color: #666;">
-                                  _________________________________________________________________<br>
-                                  _________________________________________________________________<br>
-                                  _________________________________________________________________
-                                </div>
-                              </div>
-                              
-                              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                                <div style="text-align: center;">
-                                  <p style="margin: 5px 0; font-size: 12px;">Подпись водителя</p>
-                                  <div style="border-bottom: 1px solid #999; height: 30px; margin: 0 auto; width: 200px;"></div>
-                                </div>
-                                <div style="text-align: center;">
-                                  <p style="margin: 5px 0; font-size: 12px;">Подпись диспетчера</p>
-                                  <div style="border-bottom: 1px solid #999; height: 30px; margin: 0 auto; width: 200px;"></div>
-                                </div>
-                              </div>
-                            ` : ''}
                           </div>
                         `;
                       });
@@ -701,16 +784,16 @@ export default function LogisticsPage() {
                           console.log(`Группы по машинам для района ${region.name}:`, truckGroups);
                           
                           // Если нет назначенных заявок в районе
-                          if (Object.keys(truckGroups).length === 0 || 
-                              (Object.keys(truckGroups).length === 1 && truckGroups['Не назначена'])) {
-                            alert(`В районе ${region.name} нет назначенных заявок.`);
+                          const assignedTrucks = Object.keys(truckGroups).filter(truck => truck !== 'Не назначена');
+                          if (assignedTrucks.length === 0) {
+                            alert(`В районе ${region.name} нет заявок, назначенных на конкретные машины.`);
                             return;
                           }
                           
                           // Создаем маршрутный лист для каждой машины в районе
                           Object.entries(truckGroups).forEach(([truck, leads]) => {
-                            // Пропускаем только если нет заявок
-                            if (leads.length === 0) return;
+                            // Пропускаем если нет заявок или машина не назначена
+                            if (leads.length === 0 || truck === 'Не назначена') return;
                             
                             // Разбиваем заявки на страницы
                             const pages = splitLeadsIntoPages(leads, 20);
@@ -721,58 +804,22 @@ export default function LogisticsPage() {
                               
                               htmlContent += `
                                 <div style="page-break-after: ${isLastPage ? 'always' : 'always'}; padding: 20px; font-family: Arial, sans-serif; background: white;">
-                                  <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;">
-                                    <h1 style="margin: 0; font-size: 24px; color: #333; font-weight: bold;">МАРШРУТНЫЙ ЛИСТ</h1>
-                                    <h2 style="margin: 5px 0; font-size: 18px; color: #666;">${truck} - ${region.name}</h2>
-                                    <p style="margin: 5px 0; font-size: 14px; color: #666;">Дата: ${new Date().toLocaleDateString('ru-RU')}</p>
-                                    <p style="margin: 5px 0; font-size: 14px; color: #666;">Страница ${pageIndex + 1} из ${pages.length}</p>
+                                  <div style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 8px;">
+                                      <h2 style="margin: 0; font-size: 16px; color: #333;">${truck} - ${region.name}</h2>
+                                      <div style="font-size: 14px; color: #666;">
+                                        <span>Дата: ${selectedDate}</span>
+                                        <span style="margin-left: 20px;">Страница ${pageIndex + 1}</span>
+                                        <span style="margin-left: 20px;">${leads.length} адресов</span>
+                                      </div>
+                                    </div>
                                   </div>
                                   
                                   <div style="margin-bottom: 20px;">
-                                    <h3 style="margin: 0 0 10px 0; font-size: 16px; color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px;">
-                                      Маршрут доставки по району ${region.name} (${leads.length} адресов) - Страница ${pageIndex + 1}
-                                    </h3>
-                                    
                                     ${createLeadsTableHTML(pageLeads, startIndex)}
                                   </div>
                                   
-                                  ${isLastPage ? `
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                                      <div style="border: 1px solid #ccc; padding: 10px;">
-                                        <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">Информация о водителе</h4>
-                                        <p style="margin: 5px 0; font-size: 12px;"><strong>ФИО водителя:</strong> _________________</p>
-                                        <p style="margin: 5px 0; font-size: 12px;"><strong>Номер телефона:</strong> _________________</p>
-                                        <p style="margin: 5px 0; font-size: 12px;"><strong>Время выезда:</strong> _________________</p>
-                                      </div>
-                                      
-                                      <div style="border: 1px solid #ccc; padding: 10px;">
-                                        <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">Информация о машине</h4>
-                                        <p style="margin: 5px 0; font-size: 12px;"><strong>Марка/модель:</strong> _________________</p>
-                                        <p style="margin: 5px 0; font-size: 12px;"><strong>Гос. номер:</strong> _________________</p>
-                                        <p style="margin: 5px 0; font-size: 12px;"><strong>Пробег:</strong> _________________ км</p>
-                                      </div>
-                                    </div>
-                                    
-                                    <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 20px;">
-                                      <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #333;">Примечания</h4>
-                                      <div style="border-bottom: 1px solid #999; height: 60px; padding: 5px; font-size: 12px; color: #666;">
-                                        _________________________________________________________________<br>
-                                        _________________________________________________________________<br>
-                                        _________________________________________________________________
-                                      </div>
-                                    </div>
-                                    
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                                      <div style="text-align: center;">
-                                        <p style="margin: 5px 0; font-size: 12px;">Подпись водителя</p>
-                                        <div style="border-bottom: 1px solid #999; height: 30px; margin: 0 auto; width: 200px;"></div>
-                                      </div>
-                                      <div style="text-align: center;">
-                                        <p style="margin: 5px 0; font-size: 12px;">Подпись диспетчера</p>
-                                        <div style="border-bottom: 1px solid #999; height: 30px; margin: 0 auto; width: 200px;"></div>
-                                      </div>
-                                    </div>
-                                  ` : ''}
+                                
                                 </div>
                               `;
                             });
@@ -831,6 +878,24 @@ export default function LogisticsPage() {
                       {region.totalOrders > 0 ? (region.totalLiters / region.totalOrders).toFixed(1) : 0} л
                     </span>
                   </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-black">Общая сумма:</span>
+                    <span className="font-medium text-black">
+                      {region.totalSum} ₸
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    <div>
+                      Хрустальная: {region.products.hrustalnaya} шт. | 
+                      Малыш: {region.products.malysh} шт. | 
+                      Селен: {region.products.selen} шт.
+                    </div>
+                    <div>
+                      Помпа мех.: {region.products.pompa_meh} шт. | 
+                      Помпа эл.: {region.products.pompa_el} шт. | 
+                      Стаканчики: {region.products.stakanchiki} шт.
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -844,8 +909,20 @@ export default function LogisticsPage() {
               <div key={group.name} className="bg-white shadow rounded-lg">
                 <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
                   <h3 className="text-lg font-medium text-gray-900">
-                    {group.name} ({group.totalOrders} заявок, {group.totalLiters} л)
+                    {group.name} ({group.totalOrders} заявок, {group.totalLiters} л, {group.totalSum} ₸)
                   </h3>
+                  <div className="text-sm text-gray-600 mt-1">
+                    <div>
+                      Хрустальная: {group.products.hrustalnaya} шт. | 
+                      Малыш: {group.products.malysh} шт. | 
+                      Селен: {group.products.selen} шт.
+                    </div>
+                    <div>
+                      Помпа мех.: {group.products.pompa_meh} шт. | 
+                      Помпа эл.: {group.products.pompa_el} шт. | 
+                      Стаканчики: {group.products.stakanchiki} шт.
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="overflow-x-auto">
@@ -872,6 +949,15 @@ export default function LogisticsPage() {
                         </th>
                         <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Время
+                        </th>
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Способ оплаты
+                        </th>
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Сумма сделки
+                        </th>
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Комментарий
                         </th>
                         <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Машина
@@ -914,6 +1000,19 @@ export default function LogisticsPage() {
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                               {lead.delivery_time}
                             </span>
+                          </td>
+                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                            {lead.oplata || '-'}
+                          </td>
+                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                            {Object.values(lead.products || {}).reduce((sum: number, product: any) => {
+                              const quantity = parseInt(product.quantity) || 0;
+                              const price = parseFloat(product.price || '0');
+                              return sum + (quantity * price);
+                            }, 0)} ₸
+                          </td>
+                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                            <div className="truncate max-w-[150px] sm:max-w-none">{lead.comment || '-'}</div>
                           </td>
                           <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                             <select
@@ -977,6 +1076,15 @@ export default function LogisticsPage() {
                     >
                       Время {groupBy !== 'none' && groupBy === 'time' && '↓'}
                     </th>
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Способ оплаты
+                    </th>
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Сумма сделки
+                    </th>
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Комментарий
+                    </th>
                     <th 
                       className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleColumnClick('truck')}
@@ -1021,6 +1129,19 @@ export default function LogisticsPage() {
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           {lead.delivery_time}
                         </span>
+                      </td>
+                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                        {lead.oplata || '-'}
+                      </td>
+                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                        {Object.values(lead.products || {}).reduce((sum: number, product: any) => {
+                          const quantity = parseInt(product.quantity) || 0;
+                          const price = parseFloat(product.price || '0');
+                          return sum + (quantity * price);
+                        }, 0)} ₸
+                      </td>
+                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                        <div className="truncate max-w-[150px] sm:max-w-none">{lead.comment || '-'}</div>
                       </td>
                       <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                         <select

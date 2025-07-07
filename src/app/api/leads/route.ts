@@ -11,7 +11,9 @@ function serializeLeads(leads: any[]) {
     status_id: lead.status_id ? Number(lead.status_id) : null,
     responsible_user_id: lead.responsible_user_id ? Number(lead.responsible_user_id) : null,
     delivery_date: lead.delivery_date ? lead.delivery_date.toISOString().split('T')[0] : null,
-    assigned_truck: lead.truck_assignments?.[0]?.truck_name || null,
+    assigned_truck: (lead.truck_assignments?.[0]?.truck_name && lead.truck_assignments[0].truck_name.trim() !== '') 
+      ? lead.truck_assignments[0].truck_name 
+      : null,
     // Сериализуем truck_assignments если они есть
     truck_assignments: lead.truck_assignments?.map((assignment: any) => ({
       ...assignment,
