@@ -13,6 +13,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
 RUN npm run build
+RUN ls -la /app/src/generated/prisma
+RUN ls -la /app/src/lib
 
 # Production-образ
 FROM node:20-alpine AS runner
@@ -29,6 +31,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src/generated ./src/generated
+
+# Проверяем, что файлы на месте
+RUN ls -la /app/src/generated/prisma
+RUN ls -la /app/src/lib
 
 # Устанавливаем правильные права
 USER nextjs
