@@ -213,6 +213,9 @@ export default function LogisticsPage() {
       const data = await response.json();
       
       if (Array.isArray(data)) {
+        console.log('Компонент: Получено заявок:', data.length);
+        console.log('Компонент: Пример заявки:', data[0]);
+        console.log('Компонент: Поле dotavleno в примере:', data[0]?.dotavleno);
         setLeads(data);
       } else {
         console.error('API вернул не массив:', data);
@@ -238,6 +241,11 @@ export default function LogisticsPage() {
     
     return dateMatch && timeMatch && regionMatch && truckMatch && paymentMatch;
   });
+
+  // Проверяем доставленные заявки
+  const deliveredLeads = filteredLeads.filter(lead => lead.dotavleno);
+  console.log('Доставленных заявок:', deliveredLeads.length);
+  console.log('Примеры доставленных заявок:', deliveredLeads.slice(0, 3));
 
   // Получаем уникальные регионы
   const regions = Array.from(new Set(leads.map(lead => lead.info?.region).filter(Boolean)));

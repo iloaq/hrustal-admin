@@ -62,6 +62,9 @@ export async function GET(request: Request) {
     });
     
     const serializedLeads = serializeLeads(leads);
+    console.log(`API: Получено ${serializedLeads.length} заявок`);
+    console.log('API: Пример заявки:', serializedLeads[0]);
+    console.log('API: Поле dotavleno в примере:', serializedLeads[0]?.dotavleno);
     return NextResponse.json(serializedLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);
