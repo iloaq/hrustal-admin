@@ -95,9 +95,9 @@ export async function PUT(request: Request) {
     });
 
     // Фильтруем только неназначенные заявки (нет назначений или пустое название машины)
-    const unassignedLeads = leads.filter(lead => 
+    const unassignedLeads = leads.filter((lead: any) => 
       lead.truck_assignments.length === 0 || 
-      lead.truck_assignments.every(assignment => !assignment.truck_name || assignment.truck_name.trim() === '')
+      lead.truck_assignments.every((assignment: any) => !assignment.truck_name || assignment.truck_name.trim() === '')
     );
     console.log('Total leads found:', leads.length);
     console.log('Unassigned leads:', unassignedLeads.length);
@@ -124,7 +124,7 @@ export async function PUT(request: Request) {
     };
 
     // Первый проход - назначаем по специализации районов
-    unassignedLeads.forEach(lead => {
+    unassignedLeads.forEach((lead: any) => {
       const info = lead.info as any;
       const region = info?.region;
       console.log(`Lead ${lead.lead_id}: region="${region}"`);
@@ -137,7 +137,7 @@ export async function PUT(request: Request) {
     });
 
     // Второй проход - оставшиеся заявки назначаем на наименее загруженную машину
-    unassignedLeads.forEach(lead => {
+    unassignedLeads.forEach((lead: any) => {
       const leadId = lead.lead_id.toString();
       if (!assignments[leadId]) {
         // Находим наименее загруженную машину
@@ -151,7 +151,7 @@ export async function PUT(request: Request) {
 
     // Сохраняем назначения в базу данных через TruckAssignment
     const assignmentPromises = Object.entries(assignments).map(([leadId, truck]) => {
-      const lead = unassignedLeads.find(l => l.lead_id.toString() === leadId);
+      const lead = unassignedLeads.find((l: any) => l.lead_id.toString() === leadId);
       if (!lead) return null;
       
       return prisma.truckAssignment.upsert({
