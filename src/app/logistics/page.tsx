@@ -149,21 +149,21 @@ interface Lead {
   price?: string; // цена
 }
 
-interface TruckLoading {
-  id: string;
-  loading_date: string;
-  truck_name: string;
-  truck_area: string;
-  time_slot: string;
-  hrustalnaya_orders: number;
-  malysh_orders: number;
-  hrustalnaya_free: number;
-  malysh_free: number;
-  notes: string;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-}
+// interface TruckLoading {
+//   id: string;
+//   loading_date: string;
+//   truck_name: string;
+//   truck_area: string;
+//   time_slot: string;
+//   hrustalnaya_orders: number;
+//   malysh_orders: number;
+//   hrustalnaya_free: number;
+//   malysh_free: number;
+//   notes: string;
+//   created_at: string;
+//   updated_at: string;
+//   created_by: string;
+// }
 
 // interface RegionSummary {
 //   name: string;

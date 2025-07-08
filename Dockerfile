@@ -11,10 +11,25 @@ RUN npm ci --only=production
 FROM base AS builder
 COPY package.json package-lock.json ./
 RUN npm ci
+
+# Копируем исходный код
 COPY . .
+
+# Генерируем Prisma клиент
+RUN npx prisma generate
+
+# Проверяем, что Prisma клиент сгенерирован
+RUN echo "=== Проверяем структуру src/generated ==="
+RUN ls -la /app/src/generated/
+RUN echo "=== Проверяем содержимое src/generated/prisma ==="
+RUN ls -la /app/src/generated/prisma/
+
+# Собираем приложение
 RUN npm run build
-RUN ls -la /app/src/generated/prisma
-RUN ls -la /app/src/lib
+
+# Проверяем, что сборка прошла успешно
+RUN echo "=== Проверяем результат сборки ==="
+RUN ls -la /app/.next/
 
 # Production-образ
 FROM node:20-alpine AS runner
@@ -33,8 +48,8 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src/generated ./src/generated
 
 # Проверяем, что файлы на месте
-RUN ls -la /app/src/generated/prisma
-RUN ls -la /app/src/lib
+RUN echo "=== Проверяем структуру в production образе ==="
+RUN ls -la /app/src/generated/prisma/
 
 # Устанавливаем правильные права
 USER nextjs
