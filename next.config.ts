@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
@@ -15,12 +14,6 @@ const nextConfig: NextConfig = {
         tls: false,
       };
     }
-    
-    // Добавляем алиас для Prisma
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@/generated/prisma': require.resolve('./src/generated/prisma'),
-    };
     
     return config;
   },
