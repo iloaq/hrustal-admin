@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
     // Сохраняем назначения в новую таблицу
     const assignmentPromises = Object.entries(assignments).map(async ([leadId, truck]: [string, string]) => {
-      const lead = leads.find(l => l.lead_id.toString() === leadId);
+      const lead = leads.find((l: any) => l.lead_id.toString() === leadId);
       if (!lead) return null;
 
       // Проверяем существующее назначение

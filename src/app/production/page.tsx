@@ -399,12 +399,12 @@ export default function ProductionPage() {
     
     fetchProductionNeeds();
     loadDataFromDatabase();
-  }, [selectedDate]);
+  }, [selectedDate, fetchProductionNeeds, loadDataFromDatabase]);
 
   // Загружаем данные при смене времени
   useEffect(() => {
     loadDataFromDatabase();
-  }, [selectedTimeSlot]);
+  }, [selectedTimeSlot, loadDataFromDatabase]);
 
 
 
@@ -678,7 +678,7 @@ export default function ProductionPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {currentTimeLoadings.length > 0 ? currentTimeLoadings.map((truck, _) => {
+                    {currentTimeLoadings.length > 0 ? currentTimeLoadings.map((truck) => {
                       const globalIndex = truckLoadings.findIndex(t => t.truck_name === truck.truck_name && t.time_slot === truck.time_slot);
                       return (
                         <tr key={`${truck.truck_name}-${truck.time_slot}`} className="hover:bg-gray-50">
