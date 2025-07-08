@@ -101,7 +101,7 @@ export async function GET(request: Request) {
 
       // Создаем отдельные заказы для каждого времени доставки
       if (data.morning > 0) {
-        const existingOrder = prodOrders.find(o => o.product.name === productName && o.notes === 'Утро');
+        const existingOrder = prodOrders.find((o: any) => o.product.name === productName && o.notes === 'Утро');
         if (!existingOrder) {
           const order = await prisma.productionOrder.create({
             data: {
@@ -120,7 +120,7 @@ export async function GET(request: Request) {
       }
 
       if (data.day > 0) {
-        const existingOrder = prodOrders.find(o => o.product.name === productName && o.notes === 'День');
+        const existingOrder = prodOrders.find((o: any) => o.product.name === productName && o.notes === 'День');
         if (!existingOrder) {
           const order = await prisma.productionOrder.create({
             data: {
@@ -139,7 +139,7 @@ export async function GET(request: Request) {
       }
 
       if (data.evening > 0) {
-        const existingOrder = prodOrders.find(o => o.product.name === productName && o.notes === 'Вечер');
+        const existingOrder = prodOrders.find((o: any) => o.product.name === productName && o.notes === 'Вечер');
         if (!existingOrder) {
           const order = await prisma.productionOrder.create({
             data: {
@@ -179,7 +179,7 @@ export async function GET(request: Request) {
     Object.values(productMap).forEach(prod => {
       // Если есть заказы на утро
       if (prod.morning > 0) {
-        const morningOrder = updatedProdOrders.find(o => o.product.name === prod.name && o.notes === 'Утро');
+        const morningOrder = updatedProdOrders.find((o: any) => o.product.name === prod.name && o.notes === 'Утро');
         result.push({
           productName: prod.name,
           quantity: prod.morning,
@@ -196,7 +196,7 @@ export async function GET(request: Request) {
       
       // Если есть заказы на день
       if (prod.day > 0) {
-        const dayOrder = updatedProdOrders.find(o => o.product.name === prod.name && o.notes === 'День');
+        const dayOrder = updatedProdOrders.find((o: any) => o.product.name === prod.name && o.notes === 'День');
         result.push({
           productName: prod.name,
           quantity: prod.day,
@@ -213,7 +213,7 @@ export async function GET(request: Request) {
       
       // Если есть заказы на вечер
       if (prod.evening > 0) {
-        const eveningOrder = updatedProdOrders.find(o => o.product.name === prod.name && o.notes === 'Вечер');
+        const eveningOrder = updatedProdOrders.find((o: any) => o.product.name === prod.name && o.notes === 'Вечер');
         result.push({
           productName: prod.name,
           quantity: prod.evening,
