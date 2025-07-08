@@ -77,7 +77,7 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
           <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 7%;">Время</th>
           <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 18%;">Товары</th>
           <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 8%;">Вид оплаты</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; width: 5%;">Оплата</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; width: 5%;">Оплачено</th>
           <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 12%;">Комментарий</th>
           <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 8%;">Сумма</th>
         </tr>
@@ -101,11 +101,11 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
     // Определяем статус оплаты
     const getPaymentStatus = (statOplata: number) => {
       switch (statOplata) {
-        case 1: return '❌'; // не плачено
-        case 2: return '✅'; // оплачен в аванс
-        case 3: return '⚠️'; // частично оплачен
-        case 4: return '✅'; // оплачен
-        default: return '❌'; // по умолчанию не плачено
+        case 1: return 'НЕТ'; // не плачено
+        case 2: return 'ДА'; // оплачен в аванс
+        case 3: return 'ЧАСТ'; // частично оплачен
+        case 4: return 'ДА'; // оплачен
+        default: return 'НЕТ'; // по умолчанию не плачено
       }
     };
 
@@ -119,7 +119,7 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.delivery_time}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px;">${productsList}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.oplata || ''}</td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 16px; text-align: center;">${getPaymentStatus(lead.stat_oplata || 1)}</td>
+        <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px; text-align: center; font-weight: bold;">${getPaymentStatus(lead.stat_oplata || 1)}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px;">${lead.comment || ''}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: right;">${leadSum} ₸</td>
       </tr>
