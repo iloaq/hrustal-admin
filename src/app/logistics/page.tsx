@@ -987,7 +987,7 @@ export default function LogisticsPage() {
                             {lead.oplata || '-'}
                           </td>
                           <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
-                            {Object.values(lead.products || {}).reduce((sum: number, product: any) => {
+                            {Object.values(lead.products || {}).reduce((sum: number, product: any): number => {
                               const quantity = parseInt(product.quantity) || 0;
                               const price = parseFloat(product.price || '0');
                               return sum + (quantity * price);
@@ -1116,7 +1116,7 @@ export default function LogisticsPage() {
                         {lead.oplata || '-'}
                       </td>
                       <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
-                        {Object.values(lead.products || {}).reduce((sum: number, product: any) => {
+                        {Object.values(lead.products || {}).reduce((sum: number, product: any): number => {
                           const quantity = parseInt(product.quantity) || 0;
                           const price = parseFloat(product.price || '0');
                           return sum + (quantity * price);
