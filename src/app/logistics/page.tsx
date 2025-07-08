@@ -968,7 +968,7 @@ export default function LogisticsPage() {
                           </td>
                           <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                             <div className="space-y-1">
-                              {Object.values(lead.products || {}).map((product: any, index: number) => (
+                              {(Object.values(lead.products || {}) as any[]).map((product: any, index: number) => (
                                 <div key={index} className="text-xs truncate max-w-[120px] sm:max-w-none">
                                   {product.name} - {product.quantity} шт.
                                 </div>
@@ -987,7 +987,7 @@ export default function LogisticsPage() {
                             {lead.oplata || '-'}
                           </td>
                           <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
-                            {Object.values(lead.products || {}).reduce((sum: number, product: any): number => {
+                            {(Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
                               const quantity = parseInt(product.quantity) || 0;
                               const price = parseFloat(product.price || '0');
                               return sum + (quantity * price);
@@ -1097,7 +1097,7 @@ export default function LogisticsPage() {
                       </td>
                       <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                         <div className="space-y-1">
-                          {Object.values(lead.products || {}).map((product: any, index: number) => (
+                          {(Object.values(lead.products || {}) as any[]).map((product: any, index: number) => (
                             <div key={index} className="text-xs truncate max-w-[120px] sm:max-w-none">
                               {product.name} - {product.quantity} шт.
                             </div>
@@ -1116,7 +1116,7 @@ export default function LogisticsPage() {
                         {lead.oplata || '-'}
                       </td>
                       <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
-                        {Object.values(lead.products || {}).reduce((sum: number, product: any): number => {
+                        {(Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
                           const quantity = parseInt(product.quantity) || 0;
                           const price = parseFloat(product.price || '0');
                           return sum + (quantity * price);
