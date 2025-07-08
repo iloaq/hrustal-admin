@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
       };
     }
     
+    // Добавляем алиас для Prisma
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@/generated/prisma': require.resolve('./src/generated/prisma'),
+    };
+    
     return config;
   },
 };
