@@ -34,7 +34,7 @@ export async function GET(request: Request) {
       evening: number;
     }> = {};
     
-    leads.forEach(lead => {
+    leads.forEach((lead: any) => {
       const products = lead.products ? Object.values(lead.products) : [];
       const deliveryTime = lead.delivery_time || '';
       
