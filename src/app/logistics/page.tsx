@@ -71,14 +71,15 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; page-break-inside: avoid;">
       <thead>
         <tr style="background-color: #f5f5f5;">
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 5%;">№</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 20%;">Адрес</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 12%;">Телефон</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 8%;">Время</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 20%;">Товары</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 10%;">Вид оплаты</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 15%;">Комментарий</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 10%;">Сумма</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 4%;">№</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 18%;">Адрес</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 10%;">Телефон</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 7%;">Время</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 18%;">Товары</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 8%;">Вид оплаты</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; width: 5%;">Оплата</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 12%;">Комментарий</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 8%;">Сумма</th>
         </tr>
       </thead>
       <tbody>
@@ -97,14 +98,28 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
       return sum + (quantity * price);
     }, 0);
     
+    // Определяем статус оплаты
+    const getPaymentStatus = (statOplata: number) => {
+      switch (statOplata) {
+        case 1: return '❌'; // не плачено
+        case 2: return '✅'; // оплачен в аванс
+        case 3: return '⚠️'; // частично оплачен
+        case 4: return '✅'; // оплачен
+        default: return '❌'; // по умолчанию не плачено
+      }
+    };
+
     tableHTML += `
       <tr style="page-break-inside: avoid;">
-        <td style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; font-weight: bold;">${startIndex + index + 1}</td>
+        <td style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; font-weight: bold;">
+          <a href="https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}" target="_blank" style="color: #2563eb; text-decoration: underline;">${startIndex + index + 1}</a>
+        </td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.info?.delivery_address || ''}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.info?.phone || ''}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.delivery_time}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px;">${productsList}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.oplata || ''}</td>
+        <td style="border: 1px solid #ccc; padding: 8px; font-size: 16px; text-align: center;">${getPaymentStatus(lead.stat_oplata || 1)}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px;">${lead.comment || ''}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: right;">${leadSum} ₸</td>
       </tr>
@@ -114,7 +129,7 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
   // Добавляем итоговую строку
   tableHTML += `
         <tr style="background-color: #f0f0f0; font-weight: bold;">
-          <td colspan="4" style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px;">ИТОГО:</td>
+          <td colspan="5" style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px;">ИТОГО:</td>
           <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px;">
             Хрустальная: ${totalStats.hrustalnaya} шт.<br>
             Малыш: ${totalStats.malysh} шт.<br>
@@ -123,7 +138,8 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
             Помпа эл.: ${totalStats.pompa_el} шт.<br>
             Стаканчики: ${totalStats.stakanchiki} шт.
           </td>
-          <td colspan="2" style="border: 1px solid #ccc; padding: 8px; font-size: 12px;"></td>
+          <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;"></td>
+          <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;"></td>
           <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: right;">${totalStats.totalSum} ₸</td>
         </tr>
       </tbody>
@@ -144,6 +160,7 @@ interface Lead {
   products: any;
   assigned_truck?: string;
   oplata?: string; // способ оплаты
+  stat_oplata?: number; // статус оплаты: 1-не плачено, 2-оплачен в аванс, 3-частично оплачен, 4-оплачен
   comment?: string; // комментарий
   na_zamenu?: boolean; // на замену
   price?: string; // цена
@@ -181,6 +198,7 @@ export default function LogisticsPage() {
   const [selectedTime, setSelectedTime] = useState('all');
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [selectedTruck, setSelectedTruck] = useState('all');
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState('all');
   const [autoAssigning, setAutoAssigning] = useState(false);
   const [groupBy, setGroupBy] = useState<GroupByType>('none');
 
@@ -215,8 +233,9 @@ export default function LogisticsPage() {
     const timeMatch = selectedTime === 'all' || lead.delivery_time === selectedTime;
     const regionMatch = selectedRegion === 'all' || lead.info?.region === selectedRegion;
     const truckMatch = selectedTruck === 'all' || lead.assigned_truck === selectedTruck;
+    const paymentMatch = selectedPaymentStatus === 'all' || lead.stat_oplata === parseInt(selectedPaymentStatus);
     
-    return dateMatch && timeMatch && regionMatch && truckMatch;
+    return dateMatch && timeMatch && regionMatch && truckMatch && paymentMatch;
   });
 
   // Получаем уникальные регионы
@@ -467,7 +486,7 @@ export default function LogisticsPage() {
 
         {/* Фильтры */}
         <div className="bg-white p-3 sm:p-6 rounded-lg shadow mb-4 sm:mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Дата доставки
@@ -528,6 +547,23 @@ export default function LogisticsPage() {
                 ))}
               </select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Статус оплаты
+              </label>
+              <select
+                value={selectedPaymentStatus}
+                onChange={(e) => setSelectedPaymentStatus(e.target.value)}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
+              >
+                <option value="all">Все статусы</option>
+                <option value="1">❌ Не оплачено</option>
+                <option value="2">✅ Оплачено в аванс</option>
+                <option value="3">⚠️ Частично оплачено</option>
+                <option value="4">✅ Оплачено</option>
+              </select>
+            </div>
             
             <div className="flex items-end">
               <button
@@ -542,29 +578,54 @@ export default function LogisticsPage() {
           </div>
         </div>
 
-        {/* Информация о распределении машин */}
+        {/* Информация о распределении машин и статусах оплаты */}
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Специализация машин по районам:</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs text-gray-600">
-            <div className="flex items-center">
-              <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-              <span>Машина 1 → Центр</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Специализация машин по районам:</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs text-gray-600">
+                <div className="flex items-center">
+                  <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                  <span>Машина 1 → Центр</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                  <span>Машина 2 → Вокзал</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="inline-block w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+                  <span>Машина 3 → Центр ПЗ/П/З</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="inline-block w-3 h-3 bg-orange-500 rounded-full mr-2"></span>
+                  <span>Машина 4 → Вокзал ПЗ/П/З</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                  <span>Машина 5 → Универсальная</span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center">
-              <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-              <span>Машина 2 → Вокзал</span>
-            </div>
-            <div className="flex items-center">
-              <span className="inline-block w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
-              <span>Машина 3 → Центр ПЗ/П/З</span>
-            </div>
-            <div className="flex items-center">
-              <span className="inline-block w-3 h-3 bg-orange-500 rounded-full mr-2"></span>
-              <span>Машина 4 → Вокзал ПЗ/П/З</span>
-            </div>
-            <div className="flex items-center">
-              <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-2"></span>
-              <span>Машина 5 → Универсальная</span>
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Статусы оплаты:</h3>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                <div className="flex items-center">
+                  <span className="mr-2">❌</span>
+                  <span>Не оплачено</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="mr-2">✅</span>
+                  <span>Оплачено</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="mr-2">⚠️</span>
+                  <span>Частично оплачено</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="mr-2">✅</span>
+                  <span>Оплачено в аванс</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -935,6 +996,9 @@ export default function LogisticsPage() {
                         <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Способ оплаты
                         </th>
+                        <th className="px-2 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Оплата
+                        </th>
                         <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Сумма сделки
                         </th>
@@ -950,7 +1014,17 @@ export default function LogisticsPage() {
                       {group.leads.map((lead) => (
                         <tr key={lead.lead_id} className="hover:bg-gray-50">
                           <td className="px-2 sm:px-6 py-4 text-sm font-medium text-gray-900">
-                            <div className="truncate max-w-[60px] sm:max-w-none">{lead.lead_id}</div>
+                            <div className="truncate max-w-[60px] sm:max-w-none">
+                              <a 
+                                href={`https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 underline"
+                                title="Открыть в AmoCRM"
+                              >
+                                {lead.lead_id}
+                              </a>
+                            </div>
                           </td>
                           <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                             <div>
@@ -985,6 +1059,12 @@ export default function LogisticsPage() {
                           </td>
                           <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                             {lead.oplata || '-'}
+                          </td>
+                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900 text-center">
+                            {lead.stat_oplata === 1 ? '❌' : 
+                             lead.stat_oplata === 2 ? '✅' : 
+                             lead.stat_oplata === 3 ? '⚠️' : 
+                             lead.stat_oplata === 4 ? '✅' : '❌'}
                           </td>
                           <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                             {(Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
@@ -1061,6 +1141,9 @@ export default function LogisticsPage() {
                     <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Способ оплаты
                     </th>
+                    <th className="px-2 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Оплата
+                    </th>
                     <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Сумма сделки
                     </th>
@@ -1079,7 +1162,17 @@ export default function LogisticsPage() {
                   {filteredLeads.map((lead) => (
                     <tr key={lead.lead_id} className="hover:bg-gray-50">
                       <td className="px-2 sm:px-6 py-4 text-sm font-medium text-gray-900">
-                        <div className="truncate max-w-[60px] sm:max-w-none">{lead.lead_id}</div>
+                        <div className="truncate max-w-[60px] sm:max-w-none">
+                          <a 
+                            href={`https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline"
+                            title="Открыть в AmoCRM"
+                          >
+                            {lead.lead_id}
+                          </a>
+                        </div>
                       </td>
                       <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                         <div>
@@ -1114,6 +1207,12 @@ export default function LogisticsPage() {
                       </td>
                       <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                         {lead.oplata || '-'}
+                      </td>
+                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900 text-center">
+                        {lead.stat_oplata === 1 ? '❌' : 
+                         lead.stat_oplata === 2 ? '✅' : 
+                         lead.stat_oplata === 3 ? '⚠️' : 
+                         lead.stat_oplata === 4 ? '✅' : '❌'}
                       </td>
                       <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                         {(Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
