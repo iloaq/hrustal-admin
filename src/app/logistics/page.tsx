@@ -110,7 +110,7 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
     };
 
     tableHTML += `
-      <tr style="page-break-inside: avoid;">
+      <tr style="page-break-inside: avoid; ${lead.dotavleno ? 'border-left: 4px solid #10b981;' : ''}">
         <td style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; font-weight: bold;">
           <a href="https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}" target="_blank" style="color: #2563eb; text-decoration: underline;">${startIndex + index + 1}</a>
         </td>
@@ -161,6 +161,7 @@ interface Lead {
   assigned_truck?: string;
   oplata?: string; // способ оплаты
   stat_oplata?: number; // статус оплаты: 1-не плачено, 2-оплачен в аванс, 3-частично оплачен, 4-оплачен
+  dotavleno?: boolean; // доставлено
   comment?: string; // комментарий
   na_zamenu?: boolean; // на замену
   price?: string; // цена
@@ -421,6 +422,8 @@ export default function LogisticsPage() {
     }
   };
 
+
+
   // Назначить машину для одной заявки
   const handleAssignLead = async (leadId: string, truck: string) => {
     try {
@@ -624,6 +627,15 @@ export default function LogisticsPage() {
                 <div className="flex items-center">
                   <span className="mr-2">✅</span>
                   <span>Оплачено в аванс</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Статус доставки:</h3>
+              <div className="grid grid-cols-1 gap-2 text-xs text-gray-600">
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-green-500 mr-2 rounded"></div>
+                  <span>Доставлено (зеленая рамка слева)</span>
                 </div>
               </div>
             </div>
@@ -1012,7 +1024,7 @@ export default function LogisticsPage() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {group.leads.map((lead) => (
-                        <tr key={lead.lead_id} className="hover:bg-gray-50">
+                        <tr key={lead.lead_id} className={`hover:bg-gray-50 ${lead.dotavleno ? 'border-l-4 border-l-green-500' : ''}`}>
                           <td className="px-2 sm:px-6 py-4 text-sm font-medium text-gray-900">
                             <div className="truncate max-w-[60px] sm:max-w-none">
                               <a 
@@ -1160,7 +1172,7 @@ export default function LogisticsPage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredLeads.map((lead) => (
-                    <tr key={lead.lead_id} className="hover:bg-gray-50">
+                    <tr key={lead.lead_id} className={`hover:bg-gray-50 ${lead.dotavleno ? 'border-l-4 border-l-green-500' : ''}`}>
                       <td className="px-2 sm:px-6 py-4 text-sm font-medium text-gray-900">
                         <div className="truncate max-w-[60px] sm:max-w-none">
                           <a 

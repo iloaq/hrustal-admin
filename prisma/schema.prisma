@@ -25,6 +25,7 @@ model Lead {
   na_zamenu             Boolean?
   oplata                String?           @db.VarChar(255)
   stat_oplata           Int?              @default(1) // 1-не плачено, 2-оплачен в аванс, 3-частично оплачен, 4-оплачен
+  dotavleno             Boolean?          @default(false) // доставлено
   comment               String?           @db.VarChar(600)
   odin_s                String?           @db.VarChar(255)
   production_orders     ProductionOrder[]
