@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 // Функция для преобразования BigInt в обычные числа
 function serializeLeads(leads: any[]) {
-  return leads.map(lead => ({
+  return leads.map((lead: any) => ({
     ...lead,
     lead_id: Number(lead.lead_id),
     status_id: lead.status_id ? Number(lead.status_id) : null,

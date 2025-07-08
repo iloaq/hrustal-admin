@@ -150,7 +150,7 @@ export async function PUT(request: Request) {
     });
 
     // Сохраняем назначения в базу данных через TruckAssignment
-    const assignmentPromises = Object.entries(assignments).map(([leadId, truck]) => {
+    const assignmentPromises = Object.entries(assignments).map(([leadId, truck]: [string, string]) => {
       const lead = unassignedLeads.find((l: any) => l.lead_id.toString() === leadId);
       if (!lead) return null;
       

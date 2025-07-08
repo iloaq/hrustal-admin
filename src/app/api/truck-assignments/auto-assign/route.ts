@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     
     // Группируем по регионам для лучшего распределения
     const regionGroups: {[key: string]: any[]} = {};
-    leads.forEach(lead => {
+    leads.forEach((lead: any) => {
       const info = lead.info as any;
       const region = info?.region || 'Неизвестный регион';
       if (!regionGroups[region]) {
@@ -41,15 +41,15 @@ export async function POST(request: Request) {
     });
 
     // Распределяем по регионам
-    Object.entries(regionGroups).forEach(([, regionLeads], regionIndex) => {
+    Object.entries(regionGroups).forEach(([, regionLeads]: [string, any[]], regionIndex) => {
       const truckIndex = regionIndex % trucks.length;
-      regionLeads.forEach(lead => {
+              regionLeads.forEach((lead: any) => {
         assignments[lead.lead_id.toString()] = trucks[truckIndex];
       });
     });
 
     // Сохраняем назначения в новую таблицу
-    const assignmentPromises = Object.entries(assignments).map(async ([leadId, truck]) => {
+    const assignmentPromises = Object.entries(assignments).map(async ([leadId, truck]: [string, string]) => {
       const lead = leads.find(l => l.lead_id.toString() === leadId);
       if (!lead) return null;
 

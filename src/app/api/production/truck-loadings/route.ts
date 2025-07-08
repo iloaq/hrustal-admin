@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Преобразуем BigInt в числа
-    const serializedLoadings = loadings.map(loading => ({
+    const serializedLoadings = loadings.map((loading: any) => ({
       ...loading,
       id: Number(loading.id)
     }));
@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
     const results = await Promise.all(operations);
 
     // Преобразуем BigInt в числа
-    const serializedResults = results.map(loading => ({
+    const serializedResults = results.map((loading: any) => ({
       ...loading,
       id: Number(loading.id)
     }));

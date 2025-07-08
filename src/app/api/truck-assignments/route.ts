@@ -15,7 +15,7 @@ export async function GET() {
       }
     });
     
-    return NextResponse.json(assignments.map(assignment => ({
+    return NextResponse.json(assignments.map((assignment: any) => ({
       ...assignment,
       id: Number(assignment.id),
       lead_id: Number(assignment.lead_id)

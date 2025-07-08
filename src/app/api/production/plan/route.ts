@@ -176,7 +176,7 @@ export async function GET(request: Request) {
     const result: any[] = [];
     
     // Создаем отдельные записи для каждого времени доставки
-    Object.values(productMap).forEach(prod => {
+    Object.values(productMap).forEach((prod: any) => {
       // Если есть заказы на утро
       if (prod.morning > 0) {
         const morningOrder = updatedProdOrders.find((o: any) => o.product.name === prod.name && o.notes === 'Утро');
