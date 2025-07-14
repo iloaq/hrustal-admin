@@ -15,7 +15,7 @@ import { useState, useEffect } from 'react';
 // };
 
 // Функция для разбиения заявок на страницы
-const splitLeadsIntoPages = (leads: any[], maxLeadsPerPage: number = 20) => {
+const splitLeadsIntoPages = (leads: any[], maxLeadsPerPage: number = 30) => {
   const pages = [];
   for (let i = 0; i < leads.length; i += maxLeadsPerPage) {
     pages.push(leads.slice(i, i + maxLeadsPerPage));
@@ -129,8 +129,10 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
           <a href="https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}" target="_blank" style="color: #2563eb; text-decoration: underline;">${startIndex + index + 1}</a>
         </td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">
-          <div style="margin-bottom: 4px;">${lead.info?.name || ''}</div>
-          <div style="font-size: 11px; color: #666;">${lead.info?.phone || ''}</div>
+          <div style="display: flex; gap: 8px; margin-bottom: 4px; flex-direction: row;">
+            <span>${lead.info?.name || ''}</span>
+            <span style="font-size: 11px; color: #666;">${lead.info?.phone || ''}</span>
+          </div>
           <div style="font-weight: bold; font-size: 11px; color: #666;">${lead.info?.delivery_address || ''}</div>
         </td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: center;">
@@ -751,10 +753,10 @@ export default function LogisticsPage() {
                       console.log(`Создаем маршрутный лист для машины: ${truck}, заявок: ${leads.length}`);
                       
                       // Разбиваем заявки на страницы
-                      const pages = splitLeadsIntoPages(leads, 20);
+                      const pages = splitLeadsIntoPages(leads, 30);
                       
                       pages.forEach((pageLeads, pageIndex) => {
-                        const startIndex = pageIndex * 20;
+                                                      const startIndex = pageIndex * 30;
                         const isLastPage = pageIndex === pages.length - 1;
                         
                         htmlContent += `
@@ -876,10 +878,10 @@ export default function LogisticsPage() {
                             if (leads.length === 0 || truck === 'Не назначена') return;
                             
                             // Разбиваем заявки на страницы
-                            const pages = splitLeadsIntoPages(leads, 20);
+                            const pages = splitLeadsIntoPages(leads, 30);
                             
                             pages.forEach((pageLeads, pageIndex) => {
-                              const startIndex = pageIndex * 20;
+                              const startIndex = pageIndex * 30;
                               const isLastPage = pageIndex === pages.length - 1;
                               
                               htmlContent += `
