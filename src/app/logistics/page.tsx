@@ -72,14 +72,11 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
       <thead>
         <tr style="background-color: #f5f5f5;">
           <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 4%;">№</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 18%;">Адрес</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 10%;">Телефон</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 7%;">Время</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 18%;">Товары</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 25%;">Клиент и адрес</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; width: 18%;">Товары</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: right; font-size: 12px; width: 10%;">Сумма</th>
           <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 8%;">Вид оплаты</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; width: 5%;">Оплачено</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 12%;">Комментарий</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 8%;">Сумма</th>
+          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 15%;">Комментарий</th>
         </tr>
       </thead>
       <tbody>
@@ -109,42 +106,71 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
       }
     };
 
+    // Подсчитываем количество основных товаров
+    const hrustalnaya = products.filter((product: any) => 
+      product.name.toLowerCase().includes('хрустальная')
+    ).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+    
+    const malysh = products.filter((product: any) => 
+      product.name.toLowerCase().includes('малыш')
+    ).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+    
+    const selen = products.filter((product: any) => 
+      product.name.toLowerCase().includes('селен')
+    ).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+    
+    // Остальные товары (не основные)
+    const otherProducts = products.filter((product: any) => {
+      const name = product.name.toLowerCase();
+      return !name.includes('хрустальная') && !name.includes('малыш') && !name.includes('селен');
+    });
+    
+    const otherProductsList = otherProducts.map((product: any) => 
+      `${product.name} - ${product.quantity} шт.`
+    ).join(', ');
+    
+    // Определяем, нужно ли зачеркивать цену
+    const isPaid = lead.stat_oplata === 2 || lead.stat_oplata === 4;
+    const priceStyle = isPaid ? 'text-decoration: line-through; color: #6b7280;' : '';
+    
     tableHTML += `
       <tr style="page-break-inside: avoid; ${lead.dotavleno ? 'border-left: 4px solid #10b981;' : ''}">
         <td style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; font-weight: bold;">
           <a href="https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}" target="_blank" style="color: #2563eb; text-decoration: underline;">${startIndex + index + 1}</a>
         </td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.info?.delivery_address || ''}</td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.info?.phone || ''}</td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.delivery_time}</td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px;">${productsList}</td>
+        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">
+          <div style="font-weight: bold; margin-bottom: 4px;">${lead.info?.name || lead.name || ''}</div>
+          <div style="font-size: 11px; color: #666;">${lead.info?.delivery_address || ''}</div>
+        </td>
+        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: center;">
+          <div style="font-weight: bold; margin-bottom: 4px;">
+            <span style="margin-right: 8px;">Х: ${hrustalnaya || 0}</span>
+            <span style="margin-right: 8px;">М: ${malysh || 0}</span>
+            <span>С: ${selen || 0}</span>
+          </div>
+          ${otherProductsList ? `<div style="font-size: 10px; color: #666;">${otherProductsList}</div>` : ''}
+        </td>
+        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: right; ${priceStyle}">${leadSum} ₸</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.oplata || ''}</td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px; text-align: center; font-weight: bold;">${getPaymentStatus(lead.stat_oplata || 1)}</td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px;">${lead.comment || ''}</td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: right;">${leadSum} ₸</td>
       </tr>
     `;
   });
   
   // Добавляем итоговую строку
   tableHTML += `
-        <tr style="background-color: #f0f0f0; font-weight: bold;">
-          <td colspan="5" style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px;">ИТОГО:</td>
-          <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px;">
-            Хрустальная: ${totalStats.hrustalnaya} шт.<br>
-            Малыш: ${totalStats.malysh} шт.<br>
-            Селен: ${totalStats.selen} шт.<br>
-            Помпа мех.: ${totalStats.pompa_meh} шт.<br>
-            Помпа эл.: ${totalStats.pompa_el} шт.<br>
-            Стаканчики: ${totalStats.stakanchiki} шт.
-          </td>
-          <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;"></td>
-          <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;"></td>
-          <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: right;">${totalStats.totalSum} ₸</td>
-        </tr>
-      </tbody>
-    </table>
-  `;
+    </tbody>
+    <tfoot>
+      <tr style="background-color: #f0f0f0; font-weight: bold;">
+        <td colspan="3" style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px;">
+          Хрустальная: ${totalStats.hrustalnaya} шт.; Малыш: ${totalStats.malysh} шт.; Селен: ${totalStats.selen} шт.; Помпа мех.: ${totalStats.pompa_meh} шт.; Помпа эл.: ${totalStats.pompa_el} шт.; Стаканчики: ${totalStats.stakanchiki} шт.
+        </td>
+        <td style="border: 1px solid #ccc; padding: 8px; text-align: right; font-size: 12px; font-weight: bold;">${totalStats.totalSum} ₸</td>
+        <td colspan="2" style="border: 1px solid #ccc; padding: 8px;"></td>
+      </tr>
+    </tfoot>
+  </table>
+`;
   
   return tableHTML;
 };
@@ -744,7 +770,7 @@ export default function LogisticsPage() {
                           <div style="page-break-after: ${isLastPage ? 'always' : 'always'}; padding: 20px; font-family: Arial, sans-serif; background: white;">
                             <div style="margin-bottom: 15px;">
                               <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 8px;">
-                                <h2 style="margin: 0; font-size: 16px; color: #333;">${truck}</h2>
+                                <h2 style="margin: 0; font-size: 16px; color: #333;">${truck} - ${leads[0]?.delivery_time || ''}</h2>
                                 <div style="font-size: 14px; color: #666;">
                                   <span>Дата: ${selectedDate}</span>
                                   <span style="margin-left: 20px;">Страница ${pageIndex + 1}</span>
@@ -869,7 +895,7 @@ export default function LogisticsPage() {
                                 <div style="page-break-after: ${isLastPage ? 'always' : 'always'}; padding: 20px; font-family: Arial, sans-serif; background: white;">
                                   <div style="margin-bottom: 15px;">
                                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 8px;">
-                                      <h2 style="margin: 0; font-size: 16px; color: #333;">${truck} - ${region.name}</h2>
+                                      <h2 style="margin: 0; font-size: 16px; color: #333;">${truck} - ${region.name} - ${leads[0]?.delivery_time || ''}</h2>
                                       <div style="font-size: 14px; color: #666;">
                                         <span>Дата: ${selectedDate}</span>
                                         <span style="margin-left: 20px;">Страница ${pageIndex + 1}</span>
@@ -1034,7 +1060,7 @@ export default function LogisticsPage() {
                       {group.leads.map((lead) => (
                         <tr key={lead.lead_id} className={`hover:bg-gray-50 ${lead.dotavleno ? 'border-l-4 border-l-green-500' : ''}`}>
                           <td className="px-2 sm:px-6 py-4 text-sm font-medium text-gray-900">
-                            <div className="truncate max-w-[60px] sm:max-w-none">
+                            <div className="whitespace-nowrap">
                               <a 
                                 href={`https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}`}
                                 target="_blank"
@@ -1048,8 +1074,8 @@ export default function LogisticsPage() {
                           </td>
                           <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                             <div>
-                              <div className="font-medium truncate max-w-[120px] sm:max-w-none">{lead.name}</div>
-                              <div className="text-gray-500 text-xs truncate max-w-[120px] sm:max-w-none">{lead.info?.phone}</div>
+                              <div className="font-medium whitespace-normal break-words max-w-[150px]">{lead.info?.name}</div>
+                              <div className="text-gray-500 text-xs whitespace-normal break-words max-w-[150px]">{lead.info?.phone}</div>
                             </div>
                           </td>
                           <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
@@ -1058,12 +1084,12 @@ export default function LogisticsPage() {
                             </span>
                           </td>
                           <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
-                            <div className="truncate max-w-[150px] sm:max-w-none">{lead.info?.delivery_address || 'Не указан'}</div>
+                            <div className="whitespace-normal break-words max-w-[200px]">{lead.info?.delivery_address || 'Не указан'}</div>
                           </td>
                           <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                             <div className="space-y-1">
                               {(Object.values(lead.products || {}) as any[]).map((product: any, index: number) => (
-                                <div key={index} className="text-xs truncate max-w-[120px] sm:max-w-none">
+                                <div key={index} className="text-xs whitespace-normal break-words max-w-[180px]">
                                   {product.name} - {product.quantity} шт.
                                 </div>
                               ))}
@@ -1100,7 +1126,8 @@ export default function LogisticsPage() {
                             <select
                               value={lead.assigned_truck || ''}
                               onChange={(e) => handleAssignLead(lead.lead_id, e.target.value)}
-                              className="block w-full px-2 sm:px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black"
+                              className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black whitespace-normal break-words"
+                              style={{whiteSpace: 'normal', wordBreak: 'break-word'}}
                             >
                               <option value="">Не назначена</option>
                               <option value="Машина 1">Машина 1</option>
@@ -1181,42 +1208,42 @@ export default function LogisticsPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredLeads.map((lead) => (
                     <tr key={lead.lead_id} className={`hover:bg-gray-50 ${lead.dotavleno ? 'border-l-4 border-l-green-500' : ''}`}>
-                      <td className="px-2 sm:px-6 py-4 text-sm font-medium text-gray-900">
-                        <div className="truncate max-w-[60px] sm:max-w-none">
-                          <a 
-                            href={`https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 underline"
-                            title="Открыть в AmoCRM"
-                          >
-                            {lead.lead_id}
-                          </a>
-                        </div>
-                      </td>
-                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
-                        <div>
-                          <div className="font-medium truncate max-w-[120px] sm:max-w-none">{lead.name}</div>
-                          <div className="text-gray-500 text-xs truncate max-w-[120px] sm:max-w-none">{lead.info?.phone}</div>
-                        </div>
-                      </td>
+                                                <td className="px-2 sm:px-6 py-4 text-sm font-medium text-gray-900">
+                            <div className="whitespace-nowrap">
+                              <a 
+                                href={`https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 underline"
+                                title="Открыть в AmoCRM"
+                              >
+                                {lead.lead_id}
+                              </a>
+                            </div>
+                          </td>
+                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                            <div>
+                              <div className="font-medium whitespace-normal break-words max-w-[150px]">{lead.info?.name}</div>
+                              <div className="text-gray-500 text-xs whitespace-normal break-words max-w-[150px]">{lead.info?.phone}</div>
+                            </div>
+                          </td>
                       <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {lead.info?.region || 'Неизвестно'}
                         </span>
                       </td>
-                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
-                        <div className="truncate max-w-[150px] sm:max-w-none">{lead.info?.delivery_address || 'Не указан'}</div>
-                      </td>
-                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
-                        <div className="space-y-1">
-                          {(Object.values(lead.products || {}) as any[]).map((product: any, index: number) => (
-                            <div key={index} className="text-xs truncate max-w-[120px] sm:max-w-none">
-                              {product.name} - {product.quantity} шт.
+                                                <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                            <div className="whitespace-normal break-words max-w-[200px]">{lead.info?.delivery_address || 'Не указан'}</div>
+                          </td>
+                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                            <div className="space-y-1">
+                              {(Object.values(lead.products || {}) as any[]).map((product: any, index: number) => (
+                                <div key={index} className="text-xs whitespace-normal break-words max-w-[180px]">
+                                  {product.name} - {product.quantity} шт.
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      </td>
+                          </td>
                       <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
                         {lead.total_liters} л
                       </td>
@@ -1248,7 +1275,8 @@ export default function LogisticsPage() {
                         <select
                           value={lead.assigned_truck || ''}
                           onChange={(e) => handleAssignLead(lead.lead_id, e.target.value)}
-                          className="block w-full px-2 sm:px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black"
+                          className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black whitespace-normal break-words"
+                          style={{whiteSpace: 'normal', wordBreak: 'break-word'}}
                         >
                           <option value="">Не назначена</option>
                           <option value="Машина 1">Машина 1</option>
