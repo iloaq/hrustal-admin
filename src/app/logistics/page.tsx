@@ -94,17 +94,7 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
       const price = parseFloat(product.price || '0');
       return sum + (quantity * price);
     }, 0);
-    
-    // Определяем статус оплаты
-    const getPaymentStatus = (statOplata: number) => {
-      switch (statOplata) {
-        case 1: return 'НЕТ'; // не плачено
-        case 2: return 'ДА'; // оплачен в аванс
-        case 3: return 'ЧАСТ'; // частично оплачен
-        case 4: return 'ДА'; // оплачен
-        default: return 'НЕТ'; // по умолчанию не плачено
-      }
-    };
+  
 
     // Подсчитываем количество основных товаров
     const hrustalnaya = products.filter((product: any) => 
@@ -130,7 +120,7 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
     ).join(', ');
     
     // Определяем, нужно ли зачеркивать цену
-    const isPaid = lead.stat_oplata === 2 || lead.stat_oplata === 4;
+    const isPaid = lead.stat_oplata === 1;
     const priceStyle = isPaid ? 'text-decoration: line-through; color: #6b7280;' : '';
     
     tableHTML += `
@@ -139,8 +129,9 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
           <a href="https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}" target="_blank" style="color: #2563eb; text-decoration: underline;">${startIndex + index + 1}</a>
         </td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">
-          <div style="font-weight: bold; margin-bottom: 4px;">${lead.info?.name || lead.name || ''}</div>
-          <div style="font-size: 11px; color: #666;">${lead.info?.delivery_address || ''}</div>
+          <div style="margin-bottom: 4px;">${lead.info?.name || ''}</div>
+          <div style="font-size: 11px; color: #666;">${lead.info?.phone || ''}</div>
+          <div style="font-weight: bold; font-size: 11px; color: #666;">${lead.info?.delivery_address || ''}</div>
         </td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: center;">
           <div style="font-weight: bold; margin-bottom: 4px;">
@@ -1056,10 +1047,10 @@ export default function LogisticsPage() {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {group.leads.map((lead) => (
-                        <tr key={lead.lead_id} className={`hover:bg-gray-50 ${lead.dotavleno ? 'border-l-4 border-l-green-500' : ''}`}>
-                          <td className="px-2 sm:px-6 py-4 text-sm font-medium text-gray-900">
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                  {group.leads.map((lead) => (
+                    <tr key={lead.lead_id} className={`hover:bg-gray-50 ${lead.dotavleno ? 'border-l-4 border-l-green-500' : ''}`}>
+                      <td className="px-2 sm:px-6 py-2 text-sm font-medium text-gray-900">
                             <div className="whitespace-nowrap">
                               <a 
                                 href={`https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}`}
@@ -1072,21 +1063,21 @@ export default function LogisticsPage() {
                               </a>
                             </div>
                           </td>
-                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <div>
                               <div className="font-medium whitespace-normal break-words max-w-[150px]">{lead.info?.name}</div>
                               <div className="text-gray-500 text-xs whitespace-normal break-words max-w-[150px]">{lead.info?.phone}</div>
                             </div>
                           </td>
-                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                               {lead.info?.region || 'Неизвестно'}
                             </span>
                           </td>
-                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <div className="whitespace-normal break-words max-w-[200px]">{lead.info?.delivery_address || 'Не указан'}</div>
                           </td>
-                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <div className="space-y-1">
                               {(Object.values(lead.products || {}) as any[]).map((product: any, index: number) => (
                                 <div key={index} className="text-xs whitespace-normal break-words max-w-[180px]">
@@ -1095,38 +1086,36 @@ export default function LogisticsPage() {
                               ))}
                             </div>
                           </td>
-                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             {lead.total_liters} л
                           </td>
-                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                               {lead.delivery_time}
                             </span>
                           </td>
-                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             {lead.oplata || '-'}
                           </td>
-                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900 text-center">
-                            {lead.stat_oplata === 1 ? '❌' : 
-                             lead.stat_oplata === 2 ? '✅' : 
-                             lead.stat_oplata === 3 ? '⚠️' : 
-                             lead.stat_oplata === 4 ? '✅' : '❌'}
+                          <td className="px-2 sm:px-6 py-2 text-sm text-gray-900 text-center">
+                            {lead.stat_oplata === 0 ? '❌' : 
+                             lead.stat_oplata === 1 ? '✅' : ''}
                           </td>
-                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             {(Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
                               const quantity = parseInt(product.quantity) || 0;
                               const price = parseFloat(product.price || '0');
                               return sum + (quantity * price);
                             }, 0)} ₸
                           </td>
-                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <div className="truncate max-w-[150px] sm:max-w-none">{lead.comment || '-'}</div>
                           </td>
-                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <select
                               value={lead.assigned_truck || ''}
                               onChange={(e) => handleAssignLead(lead.lead_id, e.target.value)}
-                              className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black whitespace-normal break-words"
+                              className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-0.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black whitespace-normal break-words"
                               style={{whiteSpace: 'normal', wordBreak: 'break-word'}}
                             >
                               <option value="">Не назначена</option>
@@ -1208,7 +1197,7 @@ export default function LogisticsPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredLeads.map((lead) => (
                     <tr key={lead.lead_id} className={`hover:bg-gray-50 ${lead.dotavleno ? 'border-l-4 border-l-green-500' : ''}`}>
-                                                <td className="px-2 sm:px-6 py-4 text-sm font-medium text-gray-900">
+                                                <td className="px-2 sm:px-6 py-2 text-sm font-medium text-gray-900">
                             <div className="whitespace-nowrap">
                               <a 
                                 href={`https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}`}
@@ -1221,21 +1210,21 @@ export default function LogisticsPage() {
                               </a>
                             </div>
                           </td>
-                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <div>
                               <div className="font-medium whitespace-normal break-words max-w-[150px]">{lead.info?.name}</div>
                               <div className="text-gray-500 text-xs whitespace-normal break-words max-w-[150px]">{lead.info?.phone}</div>
                             </div>
                           </td>
-                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                      <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {lead.info?.region || 'Неизвестно'}
                         </span>
                       </td>
-                                                <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                                                <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <div className="whitespace-normal break-words max-w-[200px]">{lead.info?.delivery_address || 'Не указан'}</div>
                           </td>
-                          <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                          <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <div className="space-y-1">
                               {(Object.values(lead.products || {}) as any[]).map((product: any, index: number) => (
                                 <div key={index} className="text-xs whitespace-normal break-words max-w-[180px]">
@@ -1244,38 +1233,36 @@ export default function LogisticsPage() {
                               ))}
                             </div>
                           </td>
-                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                      <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                         {lead.total_liters} л
                       </td>
-                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                      <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           {lead.delivery_time}
                         </span>
                       </td>
-                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                      <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                         {lead.oplata || '-'}
                       </td>
-                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900 text-center">
-                        {lead.stat_oplata === 1 ? '❌' : 
-                         lead.stat_oplata === 2 ? '✅' : 
-                         lead.stat_oplata === 3 ? '⚠️' : 
-                         lead.stat_oplata === 4 ? '✅' : '❌'}
+                      <td className="px-2 sm:px-6 py-2 text-sm text-gray-900 text-center">
+                        {lead.stat_oplata === 0 ? '❌' : 
+                         lead.stat_oplata === 1 ? '✅' : ''}
                       </td>
-                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                      <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                         {(Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
                           const quantity = parseInt(product.quantity) || 0;
                           const price = parseFloat(product.price || '0');
                           return sum + (quantity * price);
                         }, 0)} ₸
                       </td>
-                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                      <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                         <div className="truncate max-w-[150px] sm:max-w-none">{lead.comment || '-'}</div>
                       </td>
-                      <td className="px-2 sm:px-6 py-4 text-sm text-gray-900">
+                      <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                         <select
                           value={lead.assigned_truck || ''}
                           onChange={(e) => handleAssignLead(lead.lead_id, e.target.value)}
-                          className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black whitespace-normal break-words"
+                                                        className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-0.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black whitespace-normal break-words"
                           style={{whiteSpace: 'normal', wordBreak: 'break-word'}}
                         >
                           <option value="">Не назначена</option>
