@@ -719,6 +719,175 @@ export default function LogisticsPage() {
                 Общая выгрузка
               </button>
               <button
+                onClick={() => {
+                  // Ежедневный отчет по способам оплаты
+                  const paymentStats: {[key: string]: {count: number, totalSum: number, leads: any[]}} = {};
+                  
+                  filteredLeads.forEach(lead => {
+                    const paymentMethods = (lead.oplata || 'Не указан').split(',').map(method => method.trim());
+                    
+                    const leadSum = (Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
+                      const quantity = parseInt(product.quantity) || 0;
+                      const price = parseFloat(product.price || '0');
+                      return sum + (quantity * price);
+                    }, 0);
+                    
+                    // Если несколько способов оплаты, распределяем сумму поровну
+                    const sumPerMethod = leadSum / paymentMethods.length;
+                    
+                    paymentMethods.forEach(method => {
+                      if (!paymentStats[method]) {
+                        paymentStats[method] = { count: 0, totalSum: 0, leads: [] };
+                      }
+                      
+                      paymentStats[method].count++;
+                      paymentStats[method].totalSum += sumPerMethod;
+                      paymentStats[method].leads.push({
+                        ...lead,
+                        distributedSum: sumPerMethod,
+                        originalSum: leadSum,
+                        paymentMethods: paymentMethods
+                      });
+                    });
+                  });
+                  
+                  // Создаем HTML отчет
+                  let reportHTML = `
+                    <!DOCTYPE html>
+                    <html>
+                      <head>
+                        <meta charset="UTF-8">
+                        <title>Ежедневный отчет ${selectedDate}</title>
+                        <style>
+                          body { font-family: Arial, sans-serif; margin: 20px; }
+                          .header { text-align: center; margin-bottom: 30px; }
+                          .stats-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                          .stats-table th, .stats-table td { border: 1px solid #ccc; padding: 12px; text-align: left; }
+                          .stats-table th { background-color: #f5f5f5; font-weight: bold; }
+                          .details-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                          .details-table th, .details-table td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; }
+                          .details-table th { background-color: #f0f0f0; font-weight: bold; }
+                          .payment-section { margin-bottom: 40px; }
+                          .payment-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; }
+                          .summary { background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+                        </style>
+                      </head>
+                      <body>
+                        <div class="header">
+                          <h1>Ежедневный отчет по доставке</h1>
+                          <h2>Дата: ${selectedDate}</h2>
+                          <p>Общее количество заявок: ${filteredLeads.length}</p>
+                        </div>
+                        
+                                                 <div class="summary">
+                           <h3>Сводка по способам оплаты (суммы распределены поровну при множественных способах):</h3>
+                          <table class="stats-table">
+                            <thead>
+                              <tr>
+                                <th>Способ оплаты</th>
+                                <th>Количество заявок</th>
+                                <th>Общая сумма</th>
+                                <th>Средняя сумма</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                  `;
+                  
+                  Object.entries(paymentStats).forEach(([method, stats]) => {
+                    const avgSum = stats.count > 0 ? (stats.totalSum / stats.count).toFixed(2) : '0';
+                    reportHTML += `
+                      <tr>
+                        <td>${method}</td>
+                        <td>${stats.count}</td>
+                        <td>${stats.totalSum} ₸</td>
+                        <td>${avgSum} ₸</td>
+                      </tr>
+                    `;
+                  });
+                  
+                  reportHTML += `
+                            </tbody>
+                          </table>
+                        </div>
+                  `;
+                  
+                  // Добавляем детали по каждому способу оплаты
+                  Object.entries(paymentStats).forEach(([method, stats]) => {
+                    reportHTML += `
+                      <div class="payment-section">
+                        <div class="payment-title">${method} (${stats.count} заявок, ${stats.totalSum} ₸)</div>
+                        <table class="details-table">
+                          <thead>
+                            <tr>
+                              <th>№</th>
+                              <th>Клиент</th>
+                              <th>Адрес</th>
+                              <th>Телефон</th>
+                                                           <th>Товары</th>
+                             <th>Сумма</th>
+                             <th>Время</th>
+                             <th>Машина</th>
+                             <th>Способы оплаты</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                    `;
+                    
+                                         stats.leads.forEach((lead, index) => {
+                       const products = Object.values(lead.products || {});
+                       const productsList = products.map((product: any) => 
+                         `${product.name} - ${product.quantity} шт.`
+                       ).join(', ');
+                       
+                       const displaySum = lead.distributedSum ? 
+                         `${lead.distributedSum.toFixed(2)} ₸ (из ${lead.originalSum} ₸)` : 
+                         `${lead.originalSum} ₸`;
+                       
+                       const paymentInfo = lead.paymentMethods ? 
+                         `Все способы: ${lead.paymentMethods.join(', ')}` : 
+                         method;
+                       
+                       reportHTML += `
+                         <tr>
+                           <td>${index + 1}</td>
+                           <td>${lead.info?.name || ''}</td>
+                           <td>${lead.info?.delivery_address || ''}</td>
+                           <td>${lead.info?.phone || ''}</td>
+                           <td>${productsList}</td>
+                           <td>${displaySum}</td>
+                           <td>${lead.delivery_time || ''}</td>
+                           <td>${lead.assigned_truck || 'Не назначена'}</td>
+                           <td>${paymentInfo}</td>
+                         </tr>
+                       `;
+                     });
+                    
+                    reportHTML += `
+                          </tbody>
+                        </table>
+                      </div>
+                    `;
+                  });
+                  
+                  reportHTML += `
+                      </body>
+                    </html>
+                  `;
+                  
+                  // Создаем blob и скачиваем
+                  const blob = new Blob([reportHTML], { type: 'text/html;charset=utf-8' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `ежедневный_отчет_${selectedDate}.html`;
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                }}
+                className="bg-purple-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-purple-700 transition-colors text-xs sm:text-sm"
+              >
+                Ежедневный отчет
+              </button>
+              <button
                   onClick={() => {
                     // Создание маршрутных листов для водителей
                     let htmlContent = '';
@@ -734,6 +903,15 @@ export default function LogisticsPage() {
                         truckGroups[truck] = [];
                       }
                       truckGroups[truck].push(lead);
+                    });
+                    
+                    // Сортируем заявки в каждой группе по адресу в алфавитном порядке
+                    Object.keys(truckGroups).forEach(truck => {
+                      truckGroups[truck].sort((a, b) => {
+                        const addressA = (a.info?.delivery_address || '').toLowerCase();
+                        const addressB = (b.info?.delivery_address || '').toLowerCase();
+                        return addressA.localeCompare(addressB);
+                      });
                     });
                     
                     console.log('Группы по машинам:', truckGroups);
@@ -860,6 +1038,15 @@ export default function LogisticsPage() {
                               truckGroups[truck] = [];
                             }
                             truckGroups[truck].push(lead);
+                          });
+                          
+                          // Сортируем заявки в каждой группе по адресу в алфавитном порядке
+                          Object.keys(truckGroups).forEach(truck => {
+                            truckGroups[truck].sort((a, b) => {
+                              const addressA = (a.info?.delivery_address || '').toLowerCase();
+                              const addressB = (b.info?.delivery_address || '').toLowerCase();
+                              return addressA.localeCompare(addressB);
+                            });
                           });
                           
                           console.log(`Заявки для района ${region.name}:`, regionLeads.length);
