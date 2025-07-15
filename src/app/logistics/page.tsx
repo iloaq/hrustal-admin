@@ -237,6 +237,17 @@ export default function LogisticsPage() {
     fetchLeads();
   }, [selectedDate, selectedTime]);
 
+  // Автоматическое автораспределение при загрузке, если есть неразобранные заявки
+  useEffect(() => {
+    if (!loading && leads.length > 0) {
+      const unassigned = leads.filter(lead => !lead.assigned_truck);
+      if (unassigned.length > 0) {
+        autoAssignToTrucks();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, leads.length]);
+
   const fetchLeads = async () => {
     try {
       const response = await fetch('/api/leads');
