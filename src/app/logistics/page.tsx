@@ -38,7 +38,7 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
     };
     
     leads.forEach(lead => {
-      const leadSum = lead.price && !isNaN(Number(lead.price))
+      const leadSum: number = lead.price && !isNaN(Number(lead.price))
         ? Number(lead.price)
         : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
             const quantity = parseInt(product.quantity) || 0;
@@ -95,7 +95,7 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
     const products = Object.values(lead.products || {});
     
     // Считаем сумму из продуктов для этой заявки
-    const leadSum = lead.price && !isNaN(Number(lead.price))
+    const leadSum: number = lead.price && !isNaN(Number(lead.price))
       ? Number(lead.price)
       : products.reduce((sum: number, product: any) => {
           const quantity = parseInt(product.quantity) || 0;
@@ -329,7 +329,7 @@ export default function LogisticsPage() {
     };
     
     leads.forEach(lead => {
-      const leadSum = lead.price && !isNaN(Number(lead.price))
+      const leadSum: number = lead.price && !isNaN(Number(lead.price))
         ? Number(lead.price)
         : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
             const quantity = parseInt(product.quantity) || 0;
