@@ -74,3 +74,31 @@ export async function GET(request: Request) {
     );
   }
 } 
+
+export async function PUT(request: Request) {
+  try {
+    const { leadIds } = await request.json();
+    
+    // Обновляем поле route_exported_at для указанных заявок
+    const updatePromises = leadIds.map((leadId: string) => 
+      prisma.lead.update({
+        where: { lead_id: BigInt(leadId) },
+        data: { route_exported_at: new Date() }
+      })
+    );
+    
+    await Promise.all(updatePromises);
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: `Обновлено ${leadIds.length} заявок`,
+      updatedCount: leadIds.length
+    });
+  } catch (error) {
+    console.error('Error updating route export status:', error);
+    return NextResponse.json(
+      { error: 'Failed to update route export status' },
+      { status: 500 }
+    );
+  }
+} 

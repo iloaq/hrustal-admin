@@ -28,6 +28,7 @@ model Lead {
   dotavleno             Boolean?          @default(false) // доставлено
   comment               String?           @db.VarChar(600)
   odin_s                String?           @db.VarChar(255)
+  route_exported_at     DateTime?         // время выгрузки в маршрутные листы
   production_orders     ProductionOrder[]
   truck_assignments     TruckAssignment[]
 

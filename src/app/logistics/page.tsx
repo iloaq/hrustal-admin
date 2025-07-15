@@ -240,11 +240,35 @@ export default function LogisticsPage() {
     if (!loading && leads.length > 0) {
       const unassigned = leads.filter(lead => !lead.assigned_truck);
       if (unassigned.length > 0) {
-        autoAssignToTrucks();
+        silentAutoAssignToTrucks();
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, leads.length]);
+
+  // Тихая функция автораспределения без уведомлений
+  const silentAutoAssignToTrucks = async () => {
+    try {
+      const response = await fetch('/api/leads/assign', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          date: selectedDate,
+          time: selectedTime
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        fetchLeads();
+      }
+    } catch (error) {
+      console.error('Error silent auto-assigning:', error);
+    }
+  };
 
   const fetchLeads = async () => {
     try {
@@ -914,7 +938,7 @@ export default function LogisticsPage() {
                 Ежедневный отчет
               </button>
               <button
-                  onClick={() => {
+                  onClick={async () => {
                     // Создание маршрутных листов для водителей
                     let htmlContent = '';
                     
@@ -1009,6 +1033,29 @@ export default function LogisticsPage() {
                     a.download = `маршрутные_листы_${selectedDate}.html`;
                     a.click();
                     window.URL.revokeObjectURL(url);
+                    
+                    // Помечаем заявки как выгруженные в маршрутные листы
+                    const exportedLeadIds = Object.values(truckGroups)
+                      .filter(leads => leads.length > 0)
+                      .flat()
+                      .map(lead => lead.lead_id);
+                    
+                    if (exportedLeadIds.length > 0) {
+                      try {
+                        await fetch('/api/leads', {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ leadIds: exportedLeadIds })
+                        });
+                        
+                        // Обновляем список заявок
+                        fetchLeads();
+                      } catch (error) {
+                        console.error('Error marking leads as exported:', error);
+                      }
+                    }
                   }}
                 className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-xs sm:text-sm"
               >
@@ -1051,7 +1098,7 @@ export default function LogisticsPage() {
                         CSV
                       </button>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           // Маршрутные листы по району
                           const regionLeads = filteredLeads.filter(lead => lead.info?.region === region.name);
                           let htmlContent = '';
@@ -1145,6 +1192,29 @@ export default function LogisticsPage() {
                           a.download = `${region.name}_маршрутные_листы_${selectedDate}.html`;
                           a.click();
                           window.URL.revokeObjectURL(url);
+                          
+                          // Помечаем заявки как выгруженные в маршрутные листы
+                          const exportedLeadIds = Object.values(truckGroups)
+                            .filter(leads => leads.length > 0)
+                            .flat()
+                            .map(lead => lead.lead_id);
+                          
+                          if (exportedLeadIds.length > 0) {
+                            try {
+                              await fetch('/api/leads', {
+                                method: 'PUT',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ leadIds: exportedLeadIds })
+                              });
+                              
+                              // Обновляем список заявок
+                              fetchLeads();
+                            } catch (error) {
+                              console.error('Error marking leads as exported:', error);
+                            }
+                          }
                         }}
                         className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 transition-colors"
                       >
