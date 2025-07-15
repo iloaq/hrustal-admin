@@ -32,6 +32,8 @@ export async function POST(request: Request) {
     // Группируем по регионам для лучшего распределения
     const regionGroups: {[key: string]: any[]} = {};
     leads.forEach((lead: any) => {
+      // Пропускаем заявки, у которых уже назначена машина
+      if (lead.assigned_truck) return;
       const info = lead.info as any;
       const region = info?.region || 'Неизвестный регион';
       if (!regionGroups[region]) {
