@@ -732,19 +732,16 @@ export default function LogisticsPage() {
                       return sum + (quantity * price);
                     }, 0);
                     
-                    // Если несколько способов оплаты, распределяем сумму поровну
-                    const sumPerMethod = leadSum / paymentMethods.length;
-                    
+                    // Если несколько способов оплаты, учитываем полную сумму в каждом способе
                     paymentMethods.forEach(method => {
                       if (!paymentStats[method]) {
                         paymentStats[method] = { count: 0, totalSum: 0, leads: [] };
                       }
                       
                       paymentStats[method].count++;
-                      paymentStats[method].totalSum += sumPerMethod;
+                      paymentStats[method].totalSum += leadSum; // Полная сумма в каждом способе
                       paymentStats[method].leads.push({
                         ...lead,
-                        distributedSum: sumPerMethod,
                         originalSum: leadSum,
                         paymentMethods: paymentMethods
                       });
