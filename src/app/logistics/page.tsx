@@ -38,6 +38,15 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
     };
     
     leads.forEach(lead => {
+      let leadSum = lead.price && !isNaN(Number(lead.price))
+        ? Number(lead.price)
+        : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
+            const quantity = parseInt(product.quantity) || 0;
+            const price = parseFloat(product.price || '0');
+            return sum + (quantity * price);
+          }, 0);
+      stats.totalSum += leadSum;
+      
       Object.values(lead.products || {}).forEach((product: any) => {
         const productName = product.name.toLowerCase();
         const quantity = parseInt(product.quantity) || 0;
@@ -89,11 +98,13 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
     ).join(', ');
     
     // Считаем сумму из продуктов для этой заявки
-    const leadSum = products.reduce((sum: number, product: any) => {
-      const quantity = parseInt(product.quantity) || 0;
-      const price = parseFloat(product.price || '0');
-      return sum + (quantity * price);
-    }, 0);
+    const leadSum = lead.price && !isNaN(Number(lead.price))
+      ? Number(lead.price)
+      : products.reduce((sum: number, product: any) => {
+          const quantity = parseInt(product.quantity) || 0;
+          const price = parseFloat(product.price || '0');
+          return sum + (quantity * price);
+        }, 0);
   
 
     // Подсчитываем количество основных товаров
@@ -285,6 +296,15 @@ export default function LogisticsPage() {
     };
     
     leads.forEach(lead => {
+      let leadSum = lead.price && !isNaN(Number(lead.price))
+        ? Number(lead.price)
+        : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
+            const quantity = parseInt(product.quantity) || 0;
+            const price = parseFloat(product.price || '0');
+            return sum + (quantity * price);
+          }, 0);
+      productStats.totalSum += leadSum;
+      
       Object.values(lead.products || {}).forEach((product: any) => {
         const productName = product.name.toLowerCase();
         const quantity = parseInt(product.quantity) || 0;
@@ -726,11 +746,13 @@ export default function LogisticsPage() {
                   filteredLeads.forEach(lead => {
                     const paymentMethods = (lead.oplata || 'Не указан').split(',').map(method => method.trim());
                     
-                    const leadSum = (Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
-                      const quantity = parseInt(product.quantity) || 0;
-                      const price = parseFloat(product.price || '0');
-                      return sum + (quantity * price);
-                    }, 0);
+                    const leadSum = lead.price && !isNaN(Number(lead.price))
+                      ? Number(lead.price)
+                      : (Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
+                          const quantity = parseInt(product.quantity) || 0;
+                          const price = parseFloat(product.price || '0');
+                          return sum + (quantity * price);
+                        }, 0);
                     
                     // Если несколько способов оплаты, учитываем полную сумму в каждом способе
                     paymentMethods.forEach(method => {
@@ -821,10 +843,10 @@ export default function LogisticsPage() {
                               <th>Адрес</th>
                               <th>Телефон</th>
                                                            <th>Товары</th>
-                             <th>Сумма</th>
-                             <th>Время</th>
-                             <th>Машина</th>
-                             <th>Способы оплаты</th>
+                              <th>Сумма</th>
+                              <th>Время</th>
+                              <th>Машина</th>
+                              <th>Способы оплаты</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1286,11 +1308,13 @@ export default function LogisticsPage() {
                              lead.stat_oplata === 1 ? '✅' : ''}
                           </td>
                           <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
-                            {(Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
-                              const quantity = parseInt(product.quantity) || 0;
-                              const price = parseFloat(product.price || '0');
-                              return sum + (quantity * price);
-                            }, 0)} ₸
+                            {lead.price && !isNaN(Number(lead.price))
+                              ? Number(lead.price)
+                              : (Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
+                                  const quantity = parseInt(product.quantity) || 0;
+                                  const price = parseFloat(product.price || '0');
+                                  return sum + (quantity * price);
+                                }, 0)} ₸
                           </td>
                           <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <div className="truncate max-w-[150px] sm:max-w-none">{lead.comment || '-'}</div>
@@ -1433,11 +1457,13 @@ export default function LogisticsPage() {
                          lead.stat_oplata === 1 ? '✅' : ''}
                       </td>
                       <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
-                        {(Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
-                          const quantity = parseInt(product.quantity) || 0;
-                          const price = parseFloat(product.price || '0');
-                          return sum + (quantity * price);
-                        }, 0)} ₸
+                        {lead.price && !isNaN(Number(lead.price))
+                          ? Number(lead.price)
+                          : (Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
+                              const quantity = parseInt(product.quantity) || 0;
+                              const price = parseFloat(product.price || '0');
+                              return sum + (quantity * price);
+                            }, 0)} ₸
                       </td>
                       <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                         <div className="truncate max-w-[150px] sm:max-w-none">{lead.comment || '-'}</div>
