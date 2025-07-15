@@ -229,11 +229,101 @@ export default function LogisticsPage() {
   const [selectedTruck, setSelectedTruck] = useState('all');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState('all');
   const [autoAssigning, setAutoAssigning] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [searchQuery, setSearchQuery] = useState('');
   const [groupBy, setGroupBy] = useState<GroupByType>('none');
 
   useEffect(() => {
     fetchLeads();
   }, [selectedDate, selectedTime]);
+
+  // Горячие клавиши для поиска
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl/Cmd + K для фокуса на поиск
+      if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        event.preventDefault();
+        const searchInput = document.querySelector('input[placeholder*="Поиск"]') as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }
+      
+      // Escape для очистки поиска
+      if (event.key === 'Escape') {
+        setSearchQuery('');
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Автообновление каждые 30 секунд
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchLeads();
+    }, 30000); // 30 секунд
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Server-Sent Events для реального времени
+  useEffect(() => {
+    let eventSource: EventSource | null = null;
+    
+    const connectSSE = () => {
+      try {
+        eventSource = new EventSource(`/api/websocket?date=${selectedDate}`);
+        
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('SSE сообщение:', data);
+            
+            if (data.type === 'connected') {
+              console.log('SSE соединение установлено');
+            } else if (data.type === 'update') {
+              console.log('Получено обновление, обновляем данные...');
+              fetchLeads();
+            } else if (data.type === 'ping') {
+              console.log('Получен ping от сервера');
+            }
+          } catch (error) {
+            console.error('Ошибка обработки SSE сообщения:', error);
+          }
+        };
+
+        eventSource.onerror = (error) => {
+          console.error('SSE error:', error);
+          if (eventSource) {
+            eventSource.close();
+            eventSource = null;
+          }
+          // Переподключение через 5 секунд
+          setTimeout(connectSSE, 5000);
+        };
+
+        eventSource.onopen = () => {
+          console.log('SSE соединение открыто');
+        };
+      } catch (error) {
+        console.error('Ошибка создания SSE соединения:', error);
+        // Переподключение через 5 секунд
+        setTimeout(connectSSE, 5000);
+      }
+    };
+
+    connectSSE();
+
+    return () => {
+      console.log('Закрываем SSE соединение');
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }, [selectedDate]);
 
   // Автоматическое автораспределение при загрузке, если есть неразобранные заявки
   useEffect(() => {
@@ -270,7 +360,11 @@ export default function LogisticsPage() {
     }
   };
 
-  const fetchLeads = async () => {
+  const fetchLeads = async (showRefreshing = false) => {
+    if (showRefreshing) {
+      setRefreshing(true);
+    }
+    
     try {
       const response = await fetch('/api/leads');
       const data = await response.json();
@@ -280,6 +374,7 @@ export default function LogisticsPage() {
         console.log('Компонент: Пример заявки:', data[0]);
         console.log('Компонент: Поле dotavleno в примере:', data[0]?.dotavleno);
         setLeads(data);
+        setLastUpdate(new Date());
       } else {
         console.error('API вернул не массив:', data);
         setLeads([]);
@@ -289,10 +384,60 @@ export default function LogisticsPage() {
       setLeads([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
 
+
+  // Функция подсветки текста
+  const highlightText = (text: string, query: string) => {
+    if (!query.trim() || !text) return text;
+    
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, index) => 
+      regex.test(part) ? (
+        <mark key={index} className="bg-yellow-200 px-1 rounded">{part}</mark>
+      ) : part
+    );
+  };
+
+  // Функция универсального поиска по всем полям
+  const searchInLead = (lead: Lead, query: string): boolean => {
+    if (!query.trim()) return true;
+    
+    const searchTerm = query.toLowerCase();
+    
+    // Поиск по основным полям
+    const fields = [
+      lead.lead_id?.toString(),
+      lead.name,
+      lead.delivery_date,
+      lead.delivery_time,
+      lead.status_name,
+      lead.assigned_truck,
+      lead.oplata,
+      lead.comment,
+      lead.price,
+      lead.total_liters?.toString(),
+      lead.route_exported_at,
+      // Поиск по info объекту
+      lead.info?.name,
+      lead.info?.phone,
+      lead.info?.delivery_address,
+      lead.info?.region,
+      // Поиск по продуктам
+      ...Object.values(lead.products || {}).map((product: any) => 
+        `${product.name} ${product.quantity} ${product.price}`
+      )
+    ];
+    
+    return fields.some(field => 
+      field && field.toLowerCase().includes(searchTerm)
+    );
+  };
 
   // Фильтруем заявки
   const filteredLeads = leads.filter(lead => {
@@ -301,8 +446,9 @@ export default function LogisticsPage() {
     const regionMatch = selectedRegion === 'all' || lead.info?.region === selectedRegion;
     const truckMatch = selectedTruck === 'all' || lead.assigned_truck === selectedTruck;
     const paymentMatch = selectedPaymentStatus === 'all' || lead.stat_oplata === parseInt(selectedPaymentStatus);
+    const searchMatch = searchInLead(lead, searchQuery);
     
-    return dateMatch && timeMatch && regionMatch && truckMatch && paymentMatch;
+    return dateMatch && timeMatch && regionMatch && truckMatch && paymentMatch && searchMatch;
   });
 
   // Проверяем доставленные заявки
@@ -315,6 +461,9 @@ export default function LogisticsPage() {
 
   // Получаем уникальные машины
   const trucks = Array.from(new Set(leads.map(lead => lead.assigned_truck).filter(Boolean)));
+
+  // Получаем уникальные регионы для быстрых фильтров
+  const uniqueRegions = Array.from(new Set(leads.map(lead => lead.info?.region).filter(Boolean)));
 
   // Функция для подсчета товаров и общей суммы
   const calculateProducts = (leads: Lead[]) => {
@@ -563,8 +712,138 @@ export default function LogisticsPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="w-full py-4 px-2 sm:px-4 lg:px-6">
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Логистика</h1>
-          <p className="mt-2 text-sm sm:text-base text-gray-600">Распределение заявок по машинам и регионам</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Логистика</h1>
+              <p className="mt-2 text-sm sm:text-base text-gray-600">Распределение заявок по машинам и регионам</p>
+            </div>
+            <div className="flex items-center space-x-4 mt-4 sm:mt-0">
+              <button
+                onClick={() => fetchLeads(true)}
+                disabled={refreshing}
+                className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:bg-gray-400 flex items-center space-x-2"
+              >
+                <span>{refreshing ? '🔄' : '🔄'}</span>
+                <span>{refreshing ? 'Обновляем...' : 'Обновить'}</span>
+              </button>
+              <div className="text-xs text-gray-500">
+                <div>Обновлено: {lastUpdate.toLocaleTimeString()}</div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>Реальное время</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Поисковая панель */}
+        <div className="bg-white p-3 sm:p-6 rounded-lg shadow mb-4 sm:mb-6">
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              🔍 Универсальный поиск
+              <span className="ml-2 text-xs text-gray-500">
+                (Ctrl+K для фокуса, Esc для очистки)
+              </span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Поиск по ID, имени, телефону, адресу, товарам, машине, комментарию..."
+                className="block w-full px-4 py-3 pl-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
+              />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            {searchQuery && (
+              <div className="mt-2 text-sm text-gray-600">
+                Найдено: <span className="font-medium">{filteredLeads.length}</span> из <span className="font-medium">{leads.length}</span> заявок
+                {filteredLeads.length > 0 && (
+                  <span className="ml-2">
+                    • Сумма: <span className="font-medium">{calculateProducts(filteredLeads).totalSum} ₸</span>
+                  </span>
+                )}
+              </div>
+            )}
+            
+            {/* Быстрые фильтры */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                onClick={() => setSearchQuery('хрустальная')}
+                className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
+              >
+                Хрустальная
+              </button>
+              <button
+                onClick={() => setSearchQuery('малыш')}
+                className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200"
+              >
+                Малыш
+              </button>
+              <button
+                onClick={() => setSearchQuery('селен')}
+                className="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded hover:bg-purple-200"
+              >
+                Селен
+              </button>
+              <button
+                onClick={() => setSearchQuery('помпа')}
+                className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded hover:bg-orange-200"
+              >
+                Помпа
+              </button>
+              <button
+                onClick={() => setSearchQuery('не назначена')}
+                className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded hover:bg-red-200"
+              >
+                Не назначены
+              </button>
+              <button
+                onClick={() => setSearchQuery('доставлено')}
+                className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded hover:bg-gray-200"
+              >
+                Доставлено
+              </button>
+              <button
+                onClick={() => setSearchQuery('не оплачено')}
+                className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200"
+              >
+                Не оплачено
+              </button>
+              <button
+                onClick={() => setSearchQuery('оплачено')}
+                className="px-2 py-1 text-xs bg-emerald-100 text-emerald-800 rounded hover:bg-emerald-200"
+              >
+                Оплачено
+              </button>
+              
+              {/* Регионы */}
+              {uniqueRegions.slice(0, 5).map(region => (
+                <button
+                  key={region}
+                  onClick={() => setSearchQuery(region)}
+                  className="px-2 py-1 text-xs bg-indigo-100 text-indigo-800 rounded hover:bg-indigo-200"
+                >
+                  {region}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Фильтры */}
@@ -641,10 +920,8 @@ export default function LogisticsPage() {
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
               >
                 <option value="all">Все статусы</option>
-                <option value="1">❌ Не оплачено</option>
-                <option value="2">✅ Оплачено в аванс</option>
-                <option value="3">⚠️ Частично оплачено</option>
-                <option value="4">✅ Оплачено</option>
+                <option value="0">❌ Не оплачено</option>
+                <option value="1">✅ Оплачено</option>
               </select>
             </div>
             

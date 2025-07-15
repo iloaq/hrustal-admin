@@ -89,6 +89,27 @@ export async function PUT(request: Request) {
     
     await Promise.all(updatePromises);
     
+    // Отправляем уведомление через SSE
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/websocket/broadcast`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          date: today,
+          data: {
+            type: 'route_exported',
+            leadIds: leadIds,
+            count: leadIds.length
+          }
+        })
+      });
+    } catch (broadcastError) {
+      console.error('Error broadcasting update:', broadcastError);
+    }
+    
     return NextResponse.json({ 
       success: true, 
       message: `Обновлено ${leadIds.length} заявок`,
