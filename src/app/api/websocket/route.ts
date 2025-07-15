@@ -1,7 +1,5 @@
 import { NextRequest } from 'next/server';
-
-// Хранилище активных соединений
-const connections = new Map<string, ReadableStreamDefaultController>();
+import { addConnection, removeConnection } from './utils';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -12,9 +10,7 @@ export async function GET(request: NextRequest) {
   const stream = new ReadableStream({
     start(controller) {
       // Сохраняем контроллер для этого соединения
-      connections.set(date, controller);
-      
-      console.log(`SSE подключен для даты: ${date}. Всего соединений: ${connections.size}`);
+      addConnection(date, controller);
       
       // Отправляем приветственное сообщение
       const welcomeMessage = `data: ${JSON.stringify({
@@ -34,30 +30,24 @@ export async function GET(request: NextRequest) {
         })}\n\n`;
         
         try {
-          // Проверяем, что контроллер еще активен
-          if (connections.has(date)) {
-            controller.enqueue(encoder.encode(pingMessage));
-          } else {
-            clearInterval(pingInterval);
-          }
+          controller.enqueue(encoder.encode(pingMessage));
         } catch (error) {
           console.error('Ошибка отправки ping:', error);
           clearInterval(pingInterval);
-          connections.delete(date);
+          removeConnection(date);
         }
       }, 60000);
 
       // Очистка при закрытии соединения
       return () => {
         clearInterval(pingInterval);
-        connections.delete(date);
-        console.log(`SSE отключен для даты: ${date}. Осталось соединений: ${connections.size}`);
+        removeConnection(date);
       };
     },
     
     cancel() {
       // Дополнительная очистка при отмене потока
-      connections.delete(date);
+      removeConnection(date);
       console.log(`SSE поток отменен для даты: ${date}`);
     }
   });
@@ -71,49 +61,4 @@ export async function GET(request: NextRequest) {
       'Access-Control-Allow-Headers': 'Cache-Control',
     },
   });
-}
-
-// Функция для отправки обновлений всем подключенным клиентам
-export function broadcastUpdate(data: any) {
-  const message = `data: ${JSON.stringify({
-    type: 'update',
-    data: data,
-    timestamp: new Date().toISOString()
-  })}\n\n`;
-
-  const encoder = new TextEncoder();
-  
-  connections.forEach((controller, date) => {
-    try {
-      // Проверяем, что соединение еще активно
-      if (connections.has(date)) {
-        controller.enqueue(encoder.encode(message));
-      }
-    } catch (error) {
-      console.error('Ошибка отправки обновления:', error);
-      connections.delete(date);
-    }
-  });
-}
-
-// Функция для отправки обновлений конкретной дате
-export function broadcastUpdateForDate(date: string, data: any) {
-  const controller = connections.get(date);
-  if (controller && connections.has(date)) {
-    const message = `data: ${JSON.stringify({
-      type: 'update',
-      date: date,
-      data: data,
-      timestamp: new Date().toISOString()
-    })}\n\n`;
-
-    const encoder = new TextEncoder();
-    
-    try {
-      controller.enqueue(encoder.encode(message));
-    } catch (error) {
-      console.error('Ошибка отправки обновления для даты:', error);
-      connections.delete(date);
-    }
-  }
 } 

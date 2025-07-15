@@ -390,19 +390,7 @@ export default function LogisticsPage() {
 
 
 
-  // Функция подсветки текста
-  const highlightText = (text: string, query: string) => {
-    if (!query.trim() || !text) return text;
-    
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    const parts = text.split(regex);
-    
-    return parts.map((part, index) => 
-      regex.test(part) ? (
-        <mark key={index} className="bg-yellow-200 px-1 rounded">{part}</mark>
-      ) : part
-    );
-  };
+
 
   // Функция универсального поиска по всем полям
   const searchInLead = (lead: Lead, query: string): boolean => {

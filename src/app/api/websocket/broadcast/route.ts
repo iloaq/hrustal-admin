@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { broadcastUpdateForDate } from '../route';
+import { broadcastUpdateForDate } from '../utils';
 
 export async function POST(request: NextRequest) {
   try {
