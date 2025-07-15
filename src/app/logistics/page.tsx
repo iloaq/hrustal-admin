@@ -142,9 +142,9 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">
           <div style="display: flex; gap: 8px; margin-bottom: 4px; flex-direction: row;">
             <span>${lead.info?.name || ''}</span>
-            <span style="font-size: 11px; color: #666;">${lead.info?.phone || ''}</span>
+            <span style="font-size: 12px; color: #666;">${lead.info?.phone || ''}</span>
           </div>
-          <div style="font-weight: bold; font-size: 11px; color: #666;">${lead.info?.delivery_address || ''}</div>
+          <div style="font-weight: bold; font-size: 14px; color: #666;">${lead.info?.delivery_address || ''}</div>
         </td>
         <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: center;">
           <div style="font-weight: bold; margin-bottom: 4px;">
