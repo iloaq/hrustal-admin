@@ -777,7 +777,7 @@ export default function LogisticsPage() {
                         </div>
                         
                                                  <div class="summary">
-                           <h3>Сводка по способам оплаты (суммы распределены поровну при множественных способах):</h3>
+                           <h3>Сводка по способам оплаты (заявки с множественными способами учитываются полностью в каждом способе):</h3>
                           <table class="stats-table">
                             <thead>
                               <tr>
@@ -836,9 +836,7 @@ export default function LogisticsPage() {
                          `${product.name} - ${product.quantity} шт.`
                        ).join(', ');
                        
-                       const displaySum = lead.distributedSum ? 
-                         `${lead.distributedSum.toFixed(2)} ₸ (из ${lead.originalSum} ₸)` : 
-                         `${lead.originalSum} ₸`;
+                       const displaySum = `${lead.originalSum} ₸`;
                        
                        const paymentInfo = lead.paymentMethods ? 
                          `Все способы: ${lead.paymentMethods.join(', ')}` : 
