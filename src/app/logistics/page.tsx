@@ -38,13 +38,13 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
     };
     
     leads.forEach(lead => {
-      const leadSum: number = lead.price && !isNaN(Number(lead.price))
+      const leadSum: number = (lead.price && !isNaN(Number(lead.price))
         ? Number(lead.price)
         : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
             const quantity = parseInt(product.quantity) || 0;
             const price = parseFloat(product.price || '0');
             return sum + (quantity * price);
-          }, 0);
+          }, 0)) as number;
       stats.totalSum += leadSum;
       
       Object.values(lead.products || {}).forEach((product: any) => {
@@ -95,13 +95,13 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
     const products = Object.values(lead.products || {});
     
     // Считаем сумму из продуктов для этой заявки
-    const leadSum: number = lead.price && !isNaN(Number(lead.price))
+    const leadSum: number = (lead.price && !isNaN(Number(lead.price))
       ? Number(lead.price)
       : products.reduce((sum: number, product: any) => {
           const quantity = parseInt(product.quantity) || 0;
           const price = parseFloat(product.price || '0');
           return sum + (quantity * price);
-        }, 0);
+        }, 0)) as number;
   
 
     // Подсчитываем количество основных товаров
@@ -329,13 +329,13 @@ export default function LogisticsPage() {
     };
     
     leads.forEach(lead => {
-      const leadSum: number = lead.price && !isNaN(Number(lead.price))
+      const leadSum: number = (lead.price && !isNaN(Number(lead.price))
         ? Number(lead.price)
         : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
             const quantity = parseInt(product.quantity) || 0;
             const price = parseFloat(product.price || '0');
             return sum + (quantity * price);
-          }, 0);
+          }, 0)) as number;
       productStats.totalSum += leadSum;
       
       Object.values(lead.products || {}).forEach((product: any) => {
