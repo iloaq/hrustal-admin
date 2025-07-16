@@ -15,16 +15,17 @@ import { useState, useEffect } from 'react';
 // };
 
 // Функция для разбиения заявок на страницы
-const splitLeadsIntoPages = (leads: any[], maxLeadsPerPage: number = 30) => {
+const splitLeadsIntoPages = (leads: any[], maxLeadsPerPage: number = 16) => {
   const pages = [];
   for (let i = 0; i < leads.length; i += maxLeadsPerPage) {
-    pages.push(leads.slice(i, i + maxLeadsPerPage));
+    const page = leads.slice(i, i + maxLeadsPerPage);
+    if (page.length > 0) pages.push(page);
   }
   return pages;
 };
 
 // Функция для создания таблицы заявок с разбивкой на страницы
-const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
+const createLeadsTableHTML = (leads: any[], startIndex: number = 0, isLastPage: boolean = false) => {
   // Считаем общую статистику для таблицы
   const calculateTotalStats = () => {
     const stats = { 
@@ -76,103 +77,164 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0) => {
 
   const totalStats = calculateTotalStats();
 
+  // --- Новый шаблон таблицы ---
   let tableHTML = `
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; page-break-inside: avoid;">
       <thead>
         <tr style="background-color: #f5f5f5;">
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 4%;">№</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 25%;">Клиент и адрес</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; width: 18%;">Товары</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: right; font-size: 12px; width: 10%;">Сумма</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 8%;">Вид оплаты</th>
-          <th style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; width: 15%;">Комментарий</th>
+          <th style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px; width: 1%;">№</th>
+          <th style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px; width: 15%;">Клиент и адрес</th>
+          <th style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 13px; width: 4%; font-weight: bold;">Х</th>
+          <th style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 13px; width: 4%; font-weight: bold;">М</th>
+          <th style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 13px; width: 4%; font-weight: bold;">С</th>
+          <th style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 13px; width: 10%; font-weight: bold;">Доп. товары</th>
+          <th style="border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 13px; width: 5%;">Сумма</th>
+          <th style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px; width: 6%;">Вид оплаты</th>
+          <th style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px; width: 12%;">Комментарий</th>
         </tr>
       </thead>
       <tbody>
   `;
   
-  leads.forEach((lead, index) => {
-    const products = Object.values(lead.products || {});
-    
-    // Считаем сумму из продуктов для этой заявки
-    const leadSum: number = (lead.price && !isNaN(Number(lead.price))
-      ? Number(lead.price)
-      : products.reduce((sum: number, product: any) => {
-          const quantity = parseInt(product.quantity) || 0;
-          const price = parseFloat(product.price || '0');
-          return sum + (quantity * price);
-        }, 0)) as number;
-  
-
-    // Подсчитываем количество основных товаров
-    const hrustalnaya = products.filter((product: any) => 
-      product.name.toLowerCase().includes('хрустальная')
-    ).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
-    
-    const malysh = products.filter((product: any) => 
-      product.name.toLowerCase().includes('малыш')
-    ).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
-    
-    const selen = products.filter((product: any) => 
-      product.name.toLowerCase().includes('селен')
-    ).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
-    
-    // Остальные товары (не основные)
-    const otherProducts = products.filter((product: any) => {
-      const name = product.name.toLowerCase();
-      return !name.includes('хрустальная') && !name.includes('малыш') && !name.includes('селен');
-    });
-    
-    const otherProductsList = otherProducts.map((product: any) => 
-      `${product.name} - ${product.quantity} шт.`
-    ).join(', ');
-    
-    // Определяем, нужно ли зачеркивать цену
-    const isPaid = lead.stat_oplata === 1;
-    const priceStyle = isPaid ? 'text-decoration: line-through; color: #6b7280;' : '';
-    
+  // Добавляем заявки
+  if (isLastPage) {
+    // Последняя страница: максимум 14 заявок, добиваем пустыми строками до 14
+    const realCount = Math.min(leads.length, 12);
+    for (let i = 0; i < realCount; i++) {
+      const lead = leads[i];
+      if (lead) {
+        const products = Object.values(lead.products || {});
+        const hrustalnaya = products.filter((product: any) => product.name.toLowerCase().includes('хрустальная')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+        const malysh = products.filter((product: any) => product.name.toLowerCase().includes('малыш')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+        const selen = products.filter((product: any) => product.name.toLowerCase().includes('селен')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+        const otherProducts = products.filter((product: any) => {
+          const name = product.name.toLowerCase();
+          return !name.includes('хрустальная') && !name.includes('малыш') && !name.includes('селен');
+        });
+        const otherProductsList = otherProducts.map((product: any) => `${product.name} - ${product.quantity} шт.`).join(', ');
+        const leadSum: number = (lead.price && !isNaN(Number(lead.price))
+          ? Number(lead.price)
+          : products.reduce((sum: number, product: any) => {
+              const quantity = parseInt(product.quantity) || 0;
+              const price = parseFloat(product.price || '0');
+              return sum + (quantity * price);
+            }, 0)) as number;
+        const isPaid = lead.stat_oplata === 1;
+        const priceStyle = isPaid ? 'text-decoration: line-through; color: #6b7280;' : '';
+        tableHTML += `
+          <tr style="page-break-inside: avoid; ${lead.dotavleno ? 'border-left: 4px solid #10b981;' : ''}">
+            <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px; font-weight: bold;">${startIndex + i + 1}</td>
+            <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">
+              <div style="display: flex; gap: 8px; margin-bottom: 4px; flex-direction: row;">
+                <span>${lead.info?.name || ''}</span>
+                <span style="font-size: 13px; color: #666;">${lead.info?.phone || ''}</span>
+              </div>
+              <div style="font-weight: bold; font-size: 15px; color: #666;">${lead.info?.delivery_address || ''}</div>
+            </td>
+            <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${hrustalnaya}</td>
+            <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${malysh}</td>
+            <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${selen}</td>
+            <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px;">${otherProductsList || ''}</td>
+            <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px; text-align: right; ${priceStyle}">${leadSum} ₸</td>
+            <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.oplata || ''}</td>
+            <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.comment || ''}</td>
+          </tr>
+        `;
+      }
+    }
+    // Пустые строки, если заявок меньше 14
+    for (let i = realCount; i < 12; i++) {
+      tableHTML += `
+        <tr>
+          <td style="border: 1px solid #ccc; padding: 4px; height: 60px;">&nbsp;</td>
+          <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+          <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+          <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+          <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+          <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+          <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+          <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+          <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+        </tr>
+      `;
+    }
+  } else {
+    // Все остальные страницы: всегда 16 строк (реальные + пустые)
+    for (let i = 0; i < 16; i++) {
+      const lead = leads[i];
+      if (lead) {
+        const products = Object.values(lead.products || {});
+        const hrustalnaya = products.filter((product: any) => product.name.toLowerCase().includes('хрустальная')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+        const malysh = products.filter((product: any) => product.name.toLowerCase().includes('малыш')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+        const selen = products.filter((product: any) => product.name.toLowerCase().includes('селен')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+        const otherProducts = products.filter((product: any) => {
+          const name = product.name.toLowerCase();
+          return !name.includes('хрустальная') && !name.includes('малыш') && !name.includes('селен');
+        });
+        const otherProductsList = otherProducts.map((product: any) => `${product.name} - ${product.quantity} шт.`).join(', ');
+        const leadSum: number = (lead.price && !isNaN(Number(lead.price))
+          ? Number(lead.price)
+          : products.reduce((sum: number, product: any) => {
+              const quantity = parseInt(product.quantity) || 0;
+              const price = parseFloat(product.price || '0');
+              return sum + (quantity * price);
+            }, 0)) as number;
+        const isPaid = lead.stat_oplata === 1;
+        const priceStyle = isPaid ? 'text-decoration: line-through; color: #6b7280;' : '';
+        tableHTML += `
+          <tr style="page-break-inside: avoid; ${lead.dotavleno ? 'border-left: 4px solid #10b981;' : ''}">
+            <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px; font-weight: bold;">${startIndex + i + 1}</td>
+            <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">
+              <div style="display: flex; gap: 8px; margin-bottom: 4px; flex-direction: row;">
+                <span>${lead.info?.name || ''}</span>
+                <span style="font-size: 13px; color: #666;">${lead.info?.phone || ''}</span>
+              </div>
+              <div style="font-weight: bold; font-size: 15px; color: #666;">${lead.info?.delivery_address || ''}</div>
+            </td>
+            <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${hrustalnaya}</td>
+            <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${malysh}</td>
+            <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${selen}</td>
+            <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px;">${otherProductsList || ''}</td>
+            <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px; text-align: right; ${priceStyle}">${leadSum} ₸</td>
+            <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.oplata || ''}</td>
+            <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.comment || ''}</td>
+          </tr>
+        `;
+      } else {
+        tableHTML += `
+          <tr>
+            <td style="border: 1px solid #ccc; padding: 4px; height: 60px;">&nbsp;</td>
+            <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+            <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+            <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+            <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+            <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+            <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+            <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+            <td style="border: 1px solid #ccc; padding: 4px;">&nbsp;</td>
+          </tr>
+        `;
+      }
+    }
+  }
+  // Добавляем итоговую строку только на последней странице
+  if (isLastPage) {
     tableHTML += `
-      <tr style="page-break-inside: avoid; ${lead.dotavleno ? 'border-left: 4px solid #10b981;' : ''}">
-        <td style="border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; font-weight: bold;">
-          <a href="https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}" target="_blank" style="color: #2563eb; text-decoration: underline;">${startIndex + index + 1}</a>
-        </td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">
-          <div style="display: flex; gap: 8px; margin-bottom: 4px; flex-direction: row;">
-            <span>${lead.info?.name || ''}</span>
-            <span style="font-size: 12px; color: #666;">${lead.info?.phone || ''}</span>
-          </div>
-          <div style="font-weight: bold; font-size: 14px; color: #666;">${lead.info?.delivery_address || ''}</div>
-        </td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: center;">
-          <div style="font-weight: bold; margin-bottom: 4px;">
-            <span style="margin-right: 8px;">Х: ${hrustalnaya || 0}</span>
-            <span style="margin-right: 8px;">М: ${malysh || 0}</span>
-            <span>С: ${selen || 0}</span>
-          </div>
-          ${otherProductsList ? `<div style="font-size: 10px; color: #666;">${otherProductsList}</div>` : ''}
-        </td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px; text-align: right; ${priceStyle}">${leadSum} ₸</td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 12px;">${lead.oplata || ''}</td>
-        <td style="border: 1px solid #ccc; padding: 8px; font-size: 11px;">${lead.comment || ''}</td>
-      </tr>
+      </tbody>
+      <tfoot>
+        <tr style="background-color: #f0f0f0; font-weight: bold;">
+          <td colspan="6" style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px;">
+            Хрустальная: ${totalStats.hrustalnaya} шт.; Малыш: ${totalStats.malysh} шт.; Селен: ${totalStats.selen} шт.; Помпа мех.: ${totalStats.pompa_meh} шт.; Помпа эл.: ${totalStats.pompa_el} шт.; Стаканчики: ${totalStats.stakanchiki} шт.
+          </td>
+          <td style="border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 13px; font-weight: bold;">${totalStats.totalSum} ₸</td>
+          <td colspan="2" style="border: 1px solid #ccc; padding: 4px;"></td>
+        </tr>
+      </tfoot>
+    </table>
     `;
-  });
-  
-  // Добавляем итоговую строку
-  tableHTML += `
-    </tbody>
-    <tfoot>
-      <tr style="background-color: #f0f0f0; font-weight: bold;">
-        <td colspan="3" style="border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px;">
-          Хрустальная: ${totalStats.hrustalnaya} шт.; Малыш: ${totalStats.malysh} шт.; Селен: ${totalStats.selen} шт.; Помпа мех.: ${totalStats.pompa_meh} шт.; Помпа эл.: ${totalStats.pompa_el} шт.; Стаканчики: ${totalStats.stakanchiki} шт.
-        </td>
-        <td style="border: 1px solid #ccc; padding: 8px; text-align: right; font-size: 12px; font-weight: bold;">${totalStats.totalSum} ₸</td>
-        <td colspan="2" style="border: 1px solid #ccc; padding: 8px;"></td>
-      </tr>
-    </tfoot>
-  </table>
-`;
-  
+  } else {
+    tableHTML += `</tbody></table>`;
+  }
   return tableHTML;
 };
 
@@ -1246,10 +1308,10 @@ export default function LogisticsPage() {
                       console.log(`Создаем маршрутный лист для машины: ${truck}, заявок: ${leads.length}`);
                       
                       // Разбиваем заявки на страницы
-                      const pages = splitLeadsIntoPages(leads, 30);
+                      const pages = splitLeadsIntoPages(leads, 16);
                       
                       pages.forEach((pageLeads, pageIndex) => {
-                                                      const startIndex = pageIndex * 30;
+                                                      const startIndex = pageIndex * 16;
                         const isLastPage = pageIndex === pages.length - 1;
                         
                         htmlContent += `
@@ -1266,7 +1328,7 @@ export default function LogisticsPage() {
                             </div>
                             
                             <div style="margin-bottom: 20px;">
-                              ${createLeadsTableHTML(pageLeads, startIndex)}
+                              ${createLeadsTableHTML(pageLeads, startIndex, isLastPage)}
                             </div>
                           </div>
                         `;
@@ -1403,10 +1465,10 @@ export default function LogisticsPage() {
                             if (leads.length === 0 || truck === 'Не назначена') return;
                             
                             // Разбиваем заявки на страницы
-                            const pages = splitLeadsIntoPages(leads, 30);
+                            const pages = splitLeadsIntoPages(leads, 16);
                             
                             pages.forEach((pageLeads, pageIndex) => {
-                              const startIndex = pageIndex * 30;
+                              const startIndex = pageIndex * 16;
                               const isLastPage = pageIndex === pages.length - 1;
                               
                               htmlContent += `
@@ -1423,7 +1485,7 @@ export default function LogisticsPage() {
                                   </div>
                                   
                                   <div style="margin-bottom: 20px;">
-                                    ${createLeadsTableHTML(pageLeads, startIndex)}
+                                    ${createLeadsTableHTML(pageLeads, startIndex, isLastPage)}
                                   </div>
                                   
                                 
