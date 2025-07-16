@@ -1160,6 +1160,14 @@ export default function LogisticsPage() {
                         
                                                  <div class="summary">
                            <h3>Сводка по способам оплаты (заявки с множественными способами учитываются полностью в каждом способе):</h3>
+                           <div style="margin-bottom: 15px;">
+                             <button onclick="copyAllOrganizations()" style="margin-right: 10px; padding: 8px 12px; background-color: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                               Копировать все организации
+                             </button>
+                             <button onclick="copyAllQuantities()" style="padding: 8px 12px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                               Копировать все количества
+                             </button>
+                           </div>
                           <table class="stats-table">
                             <thead>
                               <tr>
@@ -1247,6 +1255,84 @@ export default function LogisticsPage() {
                   });
                   
                   reportHTML += `
+                        <script>
+                          function copyAllOrganizations() {
+                            const allLeads = ${JSON.stringify(filteredLeads).replace(/'/g, "\\'")};
+                            // Фильтруем только безналичные заявки
+                            const beznalLeads = allLeads.filter(lead => {
+                              const paymentMethods = (lead.oplata || '').toLowerCase();
+                              return paymentMethods.includes('безнал') || 
+                                     paymentMethods.includes('безналич') || 
+                                     paymentMethods.includes('с/ф') ||
+                                     paymentMethods.includes('счет-фактура');
+                            });
+                            
+                            if (beznalLeads.length === 0) {
+                              alert('Нет безналичных заявок для копирования!');
+                              return;
+                            }
+                            
+                            const organizations = beznalLeads.map(lead => {
+                              return lead.info?.name || lead.name || 'Не указано';
+                            }).join('\\n');
+                            
+                            if (navigator.clipboard) {
+                              navigator.clipboard.writeText(organizations).then(() => {
+                                alert('Все организации скопированы в буфер обмена!');
+                              }).catch(() => {
+                                fallbackCopy(organizations, 'организации');
+                              });
+                            } else {
+                              fallbackCopy(organizations, 'организации');
+                            }
+                          }
+                          
+                          function copyAllQuantities() {
+                            const allLeads = ${JSON.stringify(filteredLeads).replace(/'/g, "\\'")};
+                            // Фильтруем только безналичные заявки
+                            const beznalLeads = allLeads.filter(lead => {
+                              const paymentMethods = (lead.oplata || '').toLowerCase();
+                              return paymentMethods.includes('безнал') || 
+                                     paymentMethods.includes('безналич') || 
+                                     paymentMethods.includes('с/ф') ||
+                                     paymentMethods.includes('счет-фактура');
+                            });
+                            
+                            if (beznalLeads.length === 0) {
+                              alert('Нет безналичных заявок для копирования!');
+                              return;
+                            }
+                            
+                            const quantities = beznalLeads.map(lead => {
+                              // Считаем общее количество всех позиций (штук) в заявке
+                              const products = Object.values(lead.products || {});
+                              const totalQuantity = products.reduce((sum, product) => {
+                                return sum + (parseInt(product.quantity) || 0);
+                              }, 0);
+                              return totalQuantity;
+                            }).join('\\n');
+                            
+                            if (navigator.clipboard) {
+                              navigator.clipboard.writeText(quantities).then(() => {
+                                alert('Все количества скопированы в буфер обмена!');
+                              }).catch(() => {
+                                fallbackCopy(quantities, 'количества');
+                              });
+                            } else {
+                              fallbackCopy(quantities, 'количества');
+                            }
+                          }
+                          
+                          function fallbackCopy(text, type) {
+                            const textArea = document.createElement('textarea');
+                            textArea.value = text;
+                            document.body.appendChild(textArea);
+                            textArea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textArea);
+                            alert('Все ' + type + ' скопированы в буфер обмена!');
+                          }
+                        </script>
                       </body>
                     </html>
                   `;
