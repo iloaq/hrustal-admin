@@ -120,7 +120,7 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0, isLastPage: 
               return sum + (quantity * price);
             }, 0)) as number;
         const isPaid = lead.stat_oplata === 1;
-        const priceStyle = isPaid ? 'text-decoration: line-through; color: #6b7280;' : '';
+        const paidMark = isPaid ? '<span style="color: #10b981; font-weight: bold; margin-left: 4px;">➕</span>' : '';
         tableHTML += `
           <tr style="page-break-inside: avoid; ${lead.dotavleno ? 'border-left: 4px solid #10b981;' : ''}">
             <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px; font-weight: bold;">${startIndex + i + 1}</td>
@@ -135,7 +135,7 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0, isLastPage: 
             <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${malysh}</td>
             <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${selen}</td>
             <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px;">${otherProductsList || ''}</td>
-            <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px; text-align: right; ${priceStyle}">${leadSum} ₸</td>
+            <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px; text-align: right;">${leadSum} ₸${paidMark}</td>
             <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.oplata || ''}</td>
             <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.comment || ''}</td>
           </tr>
@@ -180,7 +180,7 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0, isLastPage: 
               return sum + (quantity * price);
             }, 0)) as number;
         const isPaid = lead.stat_oplata === 1;
-        const priceStyle = isPaid ? 'text-decoration: line-through; color: #6b7280;' : '';
+        const paidMark = isPaid ? '<span style="color: #10b981; font-weight: bold; margin-left: 4px;">➕</span>' : '';
         tableHTML += `
           <tr style="page-break-inside: avoid; ${lead.dotavleno ? 'border-left: 4px solid #10b981;' : ''}">
             <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px; font-weight: bold;">${startIndex + i + 1}</td>
@@ -195,7 +195,7 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0, isLastPage: 
             <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${malysh}</td>
             <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${selen}</td>
             <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px;">${otherProductsList || ''}</td>
-            <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px; text-align: right; ${priceStyle}">${leadSum} ₸</td>
+            <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px; text-align: right;">${leadSum} ₸${paidMark}</td>
             <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.oplata || ''}</td>
             <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.comment || ''}</td>
           </tr>
