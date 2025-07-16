@@ -1262,9 +1262,7 @@ export default function LogisticsPage() {
                             const beznalLeads = allLeads.filter(lead => {
                               const paymentMethods = (lead.oplata || '').toLowerCase();
                               return paymentMethods.includes('безнал') || 
-                                     paymentMethods.includes('безналич') || 
-                                     paymentMethods.includes('с/ф') ||
-                                     paymentMethods.includes('счет-фактура');
+                                     paymentMethods.includes('безналич');
                             });
                             
                             if (beznalLeads.length === 0) {
@@ -1293,9 +1291,7 @@ export default function LogisticsPage() {
                             const beznalLeads = allLeads.filter(lead => {
                               const paymentMethods = (lead.oplata || '').toLowerCase();
                               return paymentMethods.includes('безнал') || 
-                                     paymentMethods.includes('безналич') || 
-                                     paymentMethods.includes('с/ф') ||
-                                     paymentMethods.includes('счет-фактура');
+                                     paymentMethods.includes('безналич');
                             });
                             
                             if (beznalLeads.length === 0) {
