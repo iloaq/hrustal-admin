@@ -128,7 +128,7 @@ const createLeadsTableHTML = (
   for (let i = 0; i < realCount; i++) {
     const lead = leads[i];
     if (lead) {
-      const products = Object.values(lead.products || {});
+      const products = Object.values(lead.products || {}) as any[];
       const hrustalnaya: number = products.filter((product: any) => product.name.toLowerCase().includes('хрустальная')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
       const malysh: number = products.filter((product: any) => product.name.toLowerCase().includes('малыш')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
       const selen: number = products.filter((product: any) => product.name.toLowerCase().includes('селен')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
