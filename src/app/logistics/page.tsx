@@ -129,9 +129,9 @@ const createLeadsTableHTML = (
     const lead = leads[i];
     if (lead) {
       const products = Object.values(lead.products || {});
-      const hrustalnaya = products.filter((product: any) => product.name.toLowerCase().includes('хрустальная')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
-      const malysh = products.filter((product: any) => product.name.toLowerCase().includes('малыш')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
-      const selen = products.filter((product: any) => product.name.toLowerCase().includes('селен')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+      const hrustalnaya: number = products.filter((product: any) => product.name.toLowerCase().includes('хрустальная')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+      const malysh: number = products.filter((product: any) => product.name.toLowerCase().includes('малыш')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+      const selen: number = products.filter((product: any) => product.name.toLowerCase().includes('селен')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
       const otherProducts = products.filter((product: any) => {
         const name = product.name.toLowerCase();
         return !name.includes('хрустальная') && !name.includes('малыш') && !name.includes('селен');
