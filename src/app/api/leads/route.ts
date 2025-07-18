@@ -122,4 +122,69 @@ export async function PUT(request: Request) {
       { status: 500 }
     );
   }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const { leadId, stat_oplata } = await request.json();
+    
+    console.log('PATCH /api/leads - Получены данные:', { leadId, stat_oplata });
+    
+    if (!leadId || stat_oplata === undefined) {
+      console.log('PATCH /api/leads - Ошибка: отсутствуют обязательные поля');
+      return NextResponse.json(
+        { error: 'leadId and stat_oplata are required' },
+        { status: 400 }
+      );
+    }
+    
+    // Обновляем статус оплаты заявки
+    const updatedLead = await prisma.lead.update({
+      where: { lead_id: BigInt(leadId) },
+      data: { stat_oplata: stat_oplata }
+    });
+    
+    console.log('PATCH /api/leads - Заявка обновлена в БД:', { 
+      leadId, 
+      stat_oplata, 
+      updatedLeadId: Number(updatedLead.lead_id) 
+    });
+    
+    // Отправляем уведомление через SSE
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/websocket/broadcast`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          date: today,
+          data: {
+            type: 'payment_status_updated',
+            leadId: leadId,
+            stat_oplata: stat_oplata
+          }
+        })
+      });
+      console.log('PATCH /api/leads - SSE уведомление отправлено');
+    } catch (broadcastError) {
+      console.error('Error broadcasting payment update:', broadcastError);
+    }
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Статус оплаты обновлен',
+      lead: {
+        ...updatedLead,
+        lead_id: Number(updatedLead.lead_id)
+      }
+    });
+  } catch (error) {
+    console.error('Error updating payment status:', error);
+    return NextResponse.json(
+      { error: 'Failed to update payment status' },
+      { status: 500 }
+    );
+  }
 } 

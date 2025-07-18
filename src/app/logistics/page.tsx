@@ -15,7 +15,7 @@ import { useState, useEffect } from 'react';
 // };
 
 // Функция для разбиения заявок на страницы
-const splitLeadsIntoPages = (leads: any[], maxLeadsPerPage: number = 16) => {
+const splitLeadsIntoPages = (leads: any[], maxLeadsPerPage: number = 18) => {
   const pages = [];
   for (let i = 0; i < leads.length; i += maxLeadsPerPage) {
     const page = leads.slice(i, i + maxLeadsPerPage);
@@ -110,11 +110,11 @@ const createLeadsTableHTML = (
       <thead>
         <tr style="background-color: #f5f5f5;">
           <th style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px; width: 1%;">№</th>
-          <th style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px; width: 15%;">Клиент и адрес</th>
+          <th style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px; width: 15%;">Адрес</th>
           <th style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 13px; width: 4%; font-weight: bold;">Х</th>
-          <th style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 13px; width: 4%; font-weight: bold;">М</th>
           <th style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 13px; width: 4%; font-weight: bold;">С</th>
-          <th style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 13px; width: 10%; font-weight: bold;">Доп. товары</th>
+          <th style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 13px; width: 4%; font-weight: bold;">М</th>
+          <th style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 13px; width: 4%; font-weight: bold;">Доп. товары</th>
           <th style="border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 13px; width: 5%;">Сумма</th>
           <th style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px; width: 6%;">Вид оплаты</th>
           <th style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px; width: 12%;">Комментарий</th>
@@ -145,24 +145,21 @@ const createLeadsTableHTML = (
             return sum + (quantity * price);
           }, 0)) as number;
       const isPaid = lead.stat_oplata === 1;
-      const paidMark = isPaid ? '<span style="color: #10b981; font-weight: bold; margin-left: 4px;">➕</span>' : '';
+      const paidMark = isPaid ? '<span style="color: #10b981; font-weight: bold; margin-left: 4px;">+</span>' : '';
       tableHTML += `
         <tr style="page-break-inside: avoid; ${lead.dotavleno ? 'border-left: 4px solid #10b981;' : ''}">
           <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px; font-weight: bold;">${startIndex + i + 1}</td>
           <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">
-            <div style="display: flex; gap: 8px; margin-bottom: 4px; flex-direction: row;">
-              <span>${lead.info?.name || ''}</span>
-              <span style="font-size: 13px; color: #666;">${lead.info?.phone || ''}</span>
-            </div>
-            <div style="font-weight: bold; font-size: 15px; color: #666;">${lead.info?.delivery_address || ''}</div>
+            <div style="font-weight: bold; font-size: 15px; color: #666; font-weight: bold;">${lead.info?.delivery_address || ''}</div>
           </td>
-          <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${hrustalnaya}</td>
-          <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${malysh}</td>
-          <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${selen}</td>
+          <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${hrustalnaya > 0 ? hrustalnaya : ''}</td>
+          <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${selen > 0 ? selen : ''}</td>
+          <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${malysh > 0 ? malysh : ''}</td>
           <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px;">${otherProductsList || ''}</td>
           <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px; text-align: right;">${leadSum} ₸${paidMark}</td>
           <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.oplata || ''}</td>
-          <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.comment || ''}</td>
+          <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.comment || ''}| <span>${lead.info?.name || ''}</span>
+              <span style="font-size: 13px; color: #666;">${lead.info?.phone || ''}</span></td>
         </tr>
       `;
     }
@@ -688,6 +685,77 @@ export default function LogisticsPage() {
     } catch (error) {
       console.error('Error assigning truck:', error);
       alert('Ошибка при назначении машины');
+    }
+  };
+
+  // Обновить статус оплаты
+  const handlePaymentStatusChange = async (leadId: string, isPaid: boolean) => {
+    try {
+      console.log('handlePaymentStatusChange - Начало:', { leadId, isPaid });
+      
+      const lead = leads.find(l => l.lead_id === leadId);
+      if (!lead) {
+        console.log('handlePaymentStatusChange - Заявка не найдена:', leadId);
+        return;
+      }
+
+      // Сразу обновляем локальное состояние
+      setLeads(prev => prev.map(lead => 
+        lead.lead_id === leadId 
+          ? { ...lead, stat_oplata: isPaid ? 1 : 0 }
+          : lead
+      ));
+
+      console.log('handlePaymentStatusChange - Локальное состояние обновлено');
+
+      // Параллельно отправляем данные на n8n webhook
+      const webhookData = {
+        lead_id: leadId,
+        client_name: lead.info?.name || '',
+        client_phone: lead.info?.phone || '',
+        delivery_address: lead.info?.delivery_address || '',
+        delivery_date: lead.delivery_date,
+        delivery_time: lead.delivery_time,
+        payment_status: isPaid ? 1 : 0,
+        payment_method: lead.oplata || '',
+        total_amount: lead.price || '0',
+        products: lead.products || {},
+        assigned_truck: lead.assigned_truck || '',
+        comment: lead.comment || '',
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('handlePaymentStatusChange - Отправка на webhook:', webhookData);
+      
+      // Отправляем webhook без await, чтобы не блокировать интерфейс
+      fetch('https://n8n.capaadmin.skybric.com/webhook/9fa41a9a-43d6-4f4f-a219-efbc466d601c', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookData)
+      })
+      .then(response => {
+        console.log('handlePaymentStatusChange - Ответ webhook:', response.status, response.ok);
+        if (!response.ok) {
+          return response.text();
+        }
+      })
+      .then(errorText => {
+        if (errorText) {
+          console.error('handlePaymentStatusChange - Ошибка webhook:', errorText);
+        } else {
+          console.log('handlePaymentStatusChange - Webhook успешно отправлен');
+        }
+      })
+      .catch(webhookError => {
+        console.error('Ошибка отправки на webhook:', webhookError);
+        // Не показываем ошибку пользователю, так как локальное состояние уже обновлено
+      });
+
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+      alert('Ошибка при обновлении статуса оплаты');
     }
   };
 
@@ -1342,18 +1410,18 @@ export default function LogisticsPage() {
                       console.log(`Создаем маршрутный лист для машины: ${truck}, заявок: ${leads.length}`);
                       
                       // Разбиваем заявки на страницы
-                      const pages = splitLeadsIntoPages(leads, 16);
+                      const pages = splitLeadsIntoPages(leads, 18);
                       
                       pages.forEach((pageLeads, pageIndex) => {
-                        const startIndex = pageIndex * 16;
+                        const startIndex = pageIndex * 18;
                         const isLastPage = pageIndex === pages.length - 1;
                         
                         htmlContent += `
                           <div style="page-break-after: ${isLastPage ? 'always' : 'always'}; padding: 20px; font-family: Arial, sans-serif; background: white;">
                             <div style="margin-bottom: 15px;">
-                              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 8px;">
+                              <div style="display: flex; justify-content: end; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 8px;">
                                 <h2 style="margin: 0; font-size: 16px; color: #333;">${truck} - ${leads[0]?.delivery_time || ''}</h2>
-                                <div style="font-size: 14px; color: #666;">
+                                <div style="font-size: 14px; color: #666; text-align: right;">
                                   <span>Дата: ${selectedDate}</span>
                                   <span style="margin-left: 20px;">Страница ${pageIndex + 1}</span>
                                   <span style="margin-left: 20px;">${leads.length} адресов</span>
@@ -1499,18 +1567,18 @@ export default function LogisticsPage() {
                             if (leads.length === 0 || truck === 'Не назначена') return;
                             
                             // Разбиваем заявки на страницы
-                            const pages = splitLeadsIntoPages(leads, 16);
+                            const pages = splitLeadsIntoPages(leads, 18);
                             
                             pages.forEach((pageLeads, pageIndex) => {
-                              const startIndex = pageIndex * 16;
+                              const startIndex = pageIndex * 18;
                               const isLastPage = pageIndex === pages.length - 1;
                               
                               htmlContent += `
                                 <div style="page-break-after: ${isLastPage ? 'always' : 'always'}; padding: 20px; font-family: Arial, sans-serif; background: white;">
                                   <div style="margin-bottom: 15px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 8px;">
+                                    <div style="display: flex; justify-content: end; align-items: center; border-bottom: 1px solid #ccc; padding-bottom: 8px;">
                                       <h2 style="margin: 0; font-size: 16px; color: #333;">${truck} - ${region.name} - ${leads[0]?.delivery_time || ''}</h2>
-                                      <div style="font-size: 14px; color: #666;">
+                                      <div style="font-size: 14px; color: #666; text-align: right;">
                                         <span>Дата: ${selectedDate}</span>
                                         <span style="margin-left: 20px;">Страница ${pageIndex + 1}</span>
                                         <span style="margin-left: 20px;">${leads.length} адресов</span>
@@ -1742,8 +1810,13 @@ export default function LogisticsPage() {
                             {lead.oplata || '-'}
                           </td>
                           <td className="px-2 sm:px-6 py-2 text-sm text-gray-900 text-center">
-                            {lead.stat_oplata === 0 ? '❌' : 
-                             lead.stat_oplata === 1 ? '✅' : ''}
+                            <input
+                              type="checkbox"
+                              checked={lead.stat_oplata === 1}
+                              onChange={(e) => handlePaymentStatusChange(lead.lead_id, e.target.checked)}
+                              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                              title={lead.stat_oplata === 1 ? 'Оплачено' : 'Не оплачено'}
+                            />
                           </td>
                           <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             {lead.price && !isNaN(Number(lead.price))
@@ -1824,7 +1897,7 @@ export default function LogisticsPage() {
                       Способ оплаты
                     </th>
                     <th className="px-2 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Оплата
+                      Оплачено
                     </th>
                     <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Сумма сделки
@@ -1891,8 +1964,13 @@ export default function LogisticsPage() {
                         {lead.oplata || '-'}
                       </td>
                       <td className="px-2 sm:px-6 py-2 text-sm text-gray-900 text-center">
-                        {lead.stat_oplata === 0 ? '❌' : 
-                         lead.stat_oplata === 1 ? '✅' : ''}
+                        <input
+                          type="checkbox"
+                          checked={lead.stat_oplata === 1}
+                          onChange={(e) => handlePaymentStatusChange(lead.lead_id, e.target.checked)}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                          title={lead.stat_oplata === 1 ? 'Оплачено' : 'Не оплачено'}
+                        />
                       </td>
                       <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                         {lead.price && !isNaN(Number(lead.price))
