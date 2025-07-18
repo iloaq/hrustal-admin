@@ -25,21 +25,25 @@ const splitLeadsIntoPages = (leads: any[], maxLeadsPerPage: number = 16) => {
 };
 
 // Функция для создания таблицы заявок с разбивкой на страницы
-const createLeadsTableHTML = (leads: any[], startIndex: number = 0, isLastPage: boolean = false) => {
-  console.log('Создание таблицы:', {
-    leadsCount: leads.length,
-    startIndex,
-    isLastPage,
-    leadIds: leads.map(lead => lead.lead_id),
-    leadDetails: leads.map(lead => ({
-      id: lead.lead_id,
-      address: lead.info?.delivery_address,
-      truck: lead.assigned_truck,
-      time: lead.delivery_time
-    }))
+const createLeadsTableHTML = (
+  leads: any[], 
+  startIndex: number = 0, 
+  isLastPage: boolean = false, 
+  allLeads: any[] = leads
+) => {
+  const currentDeliveryTime = leads[0]?.delivery_time;
+  const currentDeliveryDate = leads[0]?.delivery_date;
+  const currentTruck = leads[0]?.assigned_truck;
+
+  console.log('Входные параметры для таблицы:', {
+    currentPageLeads: leads.length,
+    currentPageLeadIds: leads.map(lead => lead.lead_id),
+    currentDeliveryTime,
+    currentDeliveryDate,
+    currentTruck,
+    allLeadsCount: allLeads.length
   });
 
-  // Считаем общую статистику для таблицы
   const calculateTotalStats = () => {
     const stats = { 
       hrustalnaya: 0, 
@@ -51,7 +55,19 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0, isLastPage: 
       totalSum: 0 
     };
     
-    leads.forEach(lead => {
+    // Фильтрация ТОЛЬКО по времени, дате и машине
+    const filteredLeads = allLeads.filter(lead => 
+      lead.delivery_date === currentDeliveryDate && 
+      lead.delivery_time === currentDeliveryTime &&
+      lead.assigned_truck === currentTruck
+    );
+
+    console.log('Фильтрация для итогов:', {
+      filteredLeadsCount: filteredLeads.length,
+      filteredLeadIds: filteredLeads.map(lead => lead.lead_id)
+    });
+    
+    filteredLeads.forEach(lead => {
       const leadSum: number = (lead.price && !isNaN(Number(lead.price))
         ? Number(lead.price)
         : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
@@ -64,10 +80,6 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0, isLastPage: 
       Object.values(lead.products || {}).forEach((product: any) => {
         const productName = product.name.toLowerCase();
         const quantity = parseInt(product.quantity) || 0;
-        const price = parseFloat(product.price || '0');
-        const total = quantity * price;
-        
-        stats.totalSum += total;
         
         if (productName.includes('хрустальная')) {
           stats.hrustalnaya += quantity;
@@ -89,6 +101,8 @@ const createLeadsTableHTML = (leads: any[], startIndex: number = 0, isLastPage: 
   };
 
   const totalStats = calculateTotalStats();
+
+  console.log('Итоговая статистика для ВСЕЙ машины и времени:', totalStats);
 
   // --- Новый шаблон таблицы ---
   let tableHTML = `
@@ -1348,7 +1362,7 @@ export default function LogisticsPage() {
                             </div>
                             
                             <div style="margin-bottom: 20px;">
-                              ${createLeadsTableHTML(pageLeads, startIndex, isLastPage)}
+                              ${createLeadsTableHTML(pageLeads, startIndex, isLastPage, leads)}
                             </div>
                           </div>
                         `;
@@ -1505,7 +1519,7 @@ export default function LogisticsPage() {
                                   </div>
                                   
                                   <div style="margin-bottom: 20px;">
-                                    ${createLeadsTableHTML(pageLeads, startIndex, isLastPage)}
+                                    ${createLeadsTableHTML(pageLeads, startIndex, isLastPage, leads)}
                                   </div>
                                 </div>
                               `;
