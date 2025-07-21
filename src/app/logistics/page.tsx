@@ -44,29 +44,55 @@ const createLeadsTableHTML = (
     allLeadsCount: allLeads.length
   });
 
-  const calculateTotalStats = () => {
+    const calculateTotalStats = () => {
     const stats = { 
-      hrustalnaya: 0, 
-      malysh: 0, 
-      selen: 0, 
+      hrustalnaya_19l: 0,
+      hrustalnaya_5l: 0,
+      malysh_19l: 0,
+      malysh_5l: 0,
+      selen_19l: 0,
+      selen_5l: 0,
+      tara_5l: 0,
       pompa_meh: 0, 
       pompa_el: 0, 
       stakanchiki: 0, 
       totalSum: 0 
     };
     
-    // Фильтрация ТОЛЬКО по времени, дате и машине
     const filteredLeads = allLeads.filter(lead => 
       lead.delivery_date === currentDeliveryDate && 
       lead.delivery_time === currentDeliveryTime &&
       lead.assigned_truck === currentTruck
     );
 
-    console.log('Фильтрация для итогов:', {
+    console.log('Диагностика итогов:', {
+      currentDeliveryDate,
+      currentDeliveryTime,
+      currentTruck,
+      allLeadsCount: allLeads.length,
       filteredLeadsCount: filteredLeads.length,
       filteredLeadIds: filteredLeads.map(lead => lead.lead_id)
     });
-    
+
+    // Функция для определения объема продукта
+    const getProductVolume = (product: any) => {
+      const name = product.name.toLowerCase();
+      const volume = product.volume;
+      
+      // Если в названии есть указание на 5л
+      if (name.includes('5л') || name.includes('5л') || name.includes('5 литр') || name.includes('5 литров')) {
+        return '5l';
+      }
+      
+      // Если есть поле volume
+      if (volume) {
+        return volume;
+      }
+      
+      // По умолчанию 19л
+      return '19l';
+    };
+
     filteredLeads.forEach(lead => {
       const leadSum: number = (lead.price && !isNaN(Number(lead.price))
         ? Number(lead.price)
@@ -77,16 +103,37 @@ const createLeadsTableHTML = (
           }, 0)) as number;
       stats.totalSum += leadSum;
       
-      Object.values(lead.products || {}).forEach((product: any) => {
+      const products = Object.values(lead.products || {});
+      
+      products.forEach((product: any) => {
         const productName = product.name.toLowerCase();
         const quantity = parseInt(product.quantity) || 0;
-        
+        const volume = getProductVolume(product);
+
+        console.log('Обработка продукта:', {
+          leadId: lead.lead_id,
+          productName: product.name,
+          productNameLower: productName,
+          quantity,
+          volume,
+          originalVolume: product.volume
+        });
+
+        // Детальная логика подсчета с разделением по объему
         if (productName.includes('хрустальная')) {
-          stats.hrustalnaya += quantity;
+          volume === '19l' 
+            ? stats.hrustalnaya_19l += quantity
+            : stats.hrustalnaya_5l += quantity;
         } else if (productName.includes('малыш')) {
-          stats.malysh += quantity;
+          volume === '19l'
+            ? stats.malysh_19l += quantity
+            : stats.malysh_5l += quantity;
         } else if (productName.includes('селен')) {
-          stats.selen += quantity;
+          volume === '19l'
+            ? stats.selen_19l += quantity
+            : stats.selen_5l += quantity;
+        } else if (productName.includes('тара') && volume === '5l') {
+          stats.tara_5l += quantity;
         } else if (productName.includes('помпа механическая') || productName.includes('механическая помпа')) {
           stats.pompa_meh += quantity;
         } else if (productName.includes('помпа электрическая') || productName.includes('электрическая помпа')) {
@@ -129,14 +176,102 @@ const createLeadsTableHTML = (
     const lead = leads[i];
     if (lead) {
       const products = Object.values(lead.products || {}) as any[];
-      const hrustalnaya: number = products.filter((product: any) => product.name.toLowerCase().includes('хрустальная')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
-      const malysh: number = products.filter((product: any) => product.name.toLowerCase().includes('малыш')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
-      const selen: number = products.filter((product: any) => product.name.toLowerCase().includes('селен')).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+      
+      // Диагностика для первой заявки
+      if (i === 0) {
+        console.log('Диагностика продуктов:', products.map(p => ({
+          name: p.name,
+          volume: p.volume,
+          quantity: p.quantity
+        })));
+      }
+      
+      // Функция для определения объема продукта
+      const getProductVolume = (product: any) => {
+        const name = product.name.toLowerCase();
+        const volume = product.volume;
+        
+        // Если в названии есть указание на 5л
+        if (name.includes('5л') || name.includes('5л') || name.includes('5 литр') || name.includes('5 литров')) {
+          return '5l';
+        }
+        
+        // Если есть поле volume
+        if (volume) {
+          return volume;
+        }
+        
+        // По умолчанию 19л
+        return '19l';
+      };
+      
+      // Подсчет с учетом объема
+      const hrustalnaya_19l = products.filter((product: any) => 
+        product.name.toLowerCase().includes('хрустальная') && getProductVolume(product) === '19l'
+      ).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+      
+      const hrustalnaya_5l = products.filter((product: any) => 
+        product.name.toLowerCase().includes('хрустальная') && getProductVolume(product) === '5l'
+      ).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+      
+      const malysh_19l = products.filter((product: any) => 
+        product.name.toLowerCase().includes('малыш') && getProductVolume(product) === '19l'
+      ).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+      
+      const malysh_5l = products.filter((product: any) => 
+        product.name.toLowerCase().includes('малыш') && getProductVolume(product) === '5l'
+      ).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+      
+      const selen_19l = products.filter((product: any) => 
+        product.name.toLowerCase().includes('селен') && getProductVolume(product) === '19l'
+      ).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+      
+      const selen_5l = products.filter((product: any) => 
+        product.name.toLowerCase().includes('селен') && getProductVolume(product) === '5l'
+      ).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
+
+      // Формирование отображения с объемом
+      const hrustalnayaDisplay = hrustalnaya_19l > 0 
+        ? hrustalnaya_19l.toString() 
+        : hrustalnaya_5l > 0 
+          ? `${hrustalnaya_5l}(5л)` 
+          : '';
+          
+      const malyshDisplay = malysh_19l > 0 
+        ? malysh_19l.toString() 
+        : malysh_5l > 0 
+          ? `${malysh_5l}(5л)` 
+          : '';
+          
+      const selenDisplay = selen_19l > 0 
+        ? selen_19l.toString() 
+        : selen_5l > 0 
+          ? `${selen_5l}(5л)` 
+          : '';
+
       const otherProducts = products.filter((product: any) => {
         const name = product.name.toLowerCase();
         return !name.includes('хрустальная') && !name.includes('малыш') && !name.includes('селен');
       });
-      const otherProductsList = otherProducts.map((product: any) => `${product.name} - ${product.quantity} шт.`).join(', ');
+      
+      // Улучшенное отображение дополнительных товаров
+      const otherProductsList = otherProducts.map((product: any) => {
+        const name = product.name.toLowerCase();
+        let shortName = product.name;
+        
+        // Сокращаем названия для компактности
+        if (name.includes('помпа механическая')) {
+          shortName = 'Помпа мех.';
+        } else if (name.includes('помпа электрическая')) {
+          shortName = 'Помпа эл.';
+        } else if (name.includes('стаканчик') || name.includes('стакан')) {
+          shortName = 'Стаканчик';
+        } else if (name.includes('тара')) {
+          shortName = 'Тара';
+        }
+        
+        return `${shortName} ${product.quantity}`;
+      }).join(', ');
       const leadSum: number = (lead.price && !isNaN(Number(lead.price))
         ? Number(lead.price)
         : products.reduce((sum: number, product: any) => {
@@ -152,9 +287,9 @@ const createLeadsTableHTML = (
           <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">
             <div style="font-weight: bold; font-size: 15px; color: #666; font-weight: bold;">${lead.info?.delivery_address || ''}</div>
           </td>
-          <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${hrustalnaya > 0 ? hrustalnaya : ''}</td>
-          <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${selen > 0 ? selen : ''}</td>
-          <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${malysh > 0 ? malysh : ''}</td>
+          <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${hrustalnayaDisplay}</td>
+          <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${selenDisplay}</td>
+          <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${malyshDisplay}</td>
           <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px;">${otherProductsList || ''}</td>
           <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px; text-align: right;">${leadSum} ₸${paidMark}</td>
           <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.oplata || ''}</td>
@@ -172,7 +307,16 @@ const createLeadsTableHTML = (
       <tfoot>
         <tr style="background-color: #f0f0f0; font-weight: bold;">
           <td colspan="6" style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px;">
-            Хрустальная: ${totalStats.hrustalnaya} шт.; Малыш: ${totalStats.malysh} шт.; Селен: ${totalStats.selen} шт.; Помпа мех.: ${totalStats.pompa_meh} шт.; Помпа эл.: ${totalStats.pompa_el} шт.; Стаканчики: ${totalStats.stakanchiki} шт.
+            Хрустальная 19л: ${totalStats.hrustalnaya_19l} шт. 
+            Хрустальная 5л: ${totalStats.hrustalnaya_5l} шт.
+            Малыш 19л: ${totalStats.malysh_19l} шт.
+            Малыш 5л: ${totalStats.malysh_5l} шт.
+            Селен 19л: ${totalStats.selen_19l} шт.
+            Селен 5л: ${totalStats.selen_5l} шт.
+            Тара 5л: ${totalStats.tara_5l} шт.
+            Помпа мех.: ${totalStats.pompa_meh} шт.
+            Помпа эл.: ${totalStats.pompa_el} шт.
+            Стаканчики: ${totalStats.stakanchiki} шт.
           </td>
           <td style="border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 13px; font-weight: bold;">${totalStats.totalSum} ₸</td>
           <td colspan="2" style="border: 1px solid #ccc; padding: 4px;"></td>
@@ -467,13 +611,36 @@ export default function LogisticsPage() {
   // Функция для подсчета товаров и общей суммы
   const calculateProducts = (leads: Lead[]) => {
     const productStats = { 
-      hrustalnaya: 0, 
-      malysh: 0, 
-      selen: 0, 
+      hrustalnaya_19l: 0,
+      hrustalnaya_5l: 0,
+      malysh_19l: 0,
+      malysh_5l: 0,
+      selen_19l: 0,
+      selen_5l: 0,
+      tara_5l: 0,
       pompa_meh: 0, 
       pompa_el: 0, 
       stakanchiki: 0, 
       totalSum: 0 
+    };
+    
+    // Функция для определения объема продукта
+    const getProductVolume = (product: any) => {
+      const name = product.name.toLowerCase();
+      const volume = product.volume;
+      
+      // Если в названии есть указание на 5л
+      if (name.includes('5л') || name.includes('5л') || name.includes('5 литр') || name.includes('5 литров')) {
+        return '5l';
+      }
+      
+      // Если есть поле volume
+      if (volume) {
+        return volume;
+      }
+      
+      // По умолчанию 19л
+      return '19l';
     };
     
     leads.forEach(lead => {
@@ -486,20 +653,28 @@ export default function LogisticsPage() {
           }, 0)) as number;
       productStats.totalSum += leadSum;
       
-      Object.values(lead.products || {}).forEach((product: any) => {
+      const products = Object.values(lead.products || {});
+      
+      products.forEach((product: any) => {
         const productName = product.name.toLowerCase();
         const quantity = parseInt(product.quantity) || 0;
-        const price = parseFloat(product.price || '0');
-        const total = quantity * price;
-        
-        productStats.totalSum += total;
-        
+        const volume = getProductVolume(product);
+
+        // Детальная логика подсчета с разделением по объему
         if (productName.includes('хрустальная')) {
-          productStats.hrustalnaya += quantity;
+          volume === '19l' 
+            ? productStats.hrustalnaya_19l += quantity
+            : productStats.hrustalnaya_5l += quantity;
         } else if (productName.includes('малыш')) {
-          productStats.malysh += quantity;
+          volume === '19l'
+            ? productStats.malysh_19l += quantity
+            : productStats.malysh_5l += quantity;
         } else if (productName.includes('селен')) {
-          productStats.selen += quantity;
+          volume === '19l'
+            ? productStats.selen_19l += quantity
+            : productStats.selen_5l += quantity;
+        } else if (productName.includes('тара') && volume === '5l') {
+          productStats.tara_5l += quantity;
         } else if (productName.includes('помпа механическая') || productName.includes('механическая помпа')) {
           productStats.pompa_meh += quantity;
         } else if (productName.includes('помпа электрическая') || productName.includes('электрическая помпа')) {
@@ -1678,11 +1853,15 @@ export default function LogisticsPage() {
                   </div>
                   <div className="text-xs text-gray-600 mt-1">
                     <div>
-                      Хрустальная: {region.products.hrustalnaya} шт. | 
-                      Малыш: {region.products.malysh} шт. | 
-                      Селен: {region.products.selen} шт.
+                      Хрустальная 19л: {region.products.hrustalnaya_19l} шт. | 
+                      Хрустальная 5л: {region.products.hrustalnaya_5l} шт. | 
+                      Малыш 19л: {region.products.malysh_19l} шт. | 
+                      Малыш 5л: {region.products.malysh_5l} шт.
                     </div>
                     <div>
+                      Селен 19л: {region.products.selen_19l} шт. | 
+                      Селен 5л: {region.products.selen_5l} шт. | 
+                      Тара 5л: {region.products.tara_5l} шт. | 
                       Помпа мех.: {region.products.pompa_meh} шт. | 
                       Помпа эл.: {region.products.pompa_el} шт. | 
                       Стаканчики: {region.products.stakanchiki} шт.
@@ -1705,11 +1884,15 @@ export default function LogisticsPage() {
                   </h3>
                   <div className="text-sm text-gray-600 mt-1">
                     <div>
-                      Хрустальная: {group.products.hrustalnaya} шт. | 
-                      Малыш: {group.products.malysh} шт. | 
-                      Селен: {group.products.selen} шт.
+                      Хрустальная 19л: {group.products.hrustalnaya_19l} шт. | 
+                      Хрустальная 5л: {group.products.hrustalnaya_5l} шт. | 
+                      Малыш 19л: {group.products.malysh_19l} шт. | 
+                      Малыш 5л: {group.products.malysh_5l} шт.
                     </div>
                     <div>
+                      Селен 19л: {group.products.selen_19l} шт. | 
+                      Селен 5л: {group.products.selen_5l} шт. | 
+                      Тара 5л: {group.products.tara_5l} шт. | 
                       Помпа мех.: {group.products.pompa_meh} шт. | 
                       Помпа эл.: {group.products.pompa_el} шт. | 
                       Стаканчики: {group.products.stakanchiki} шт.
