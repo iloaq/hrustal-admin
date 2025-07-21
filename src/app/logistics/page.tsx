@@ -89,7 +89,21 @@ const createLeadsTableHTML = (
         return volume;
       }
       
-      // По умолчанию 19л
+      // Проверяем точные названия продуктов
+      if (name.includes('хрустальная 5л') || name.includes('хрустальаня 5л')) {
+        return '5l';
+      }
+      if (name.includes('селен 5л')) {
+        return '5l';
+      }
+      if (name.includes('малыш 5л') || name.includes('малышл 5л')) {
+        return '5l';
+      }
+      if (name.includes('тара 19л')) {
+        return '19l';
+      }
+      
+      // По умолчанию 19л для старых заявок
       return '19l';
     };
 
@@ -201,7 +215,21 @@ const createLeadsTableHTML = (
           return volume;
         }
         
-        // По умолчанию 19л
+        // Проверяем точные названия продуктов
+        if (name.includes('хрустальная 5л') || name.includes('хрустальаня 5л')) {
+          return '5l';
+        }
+        if (name.includes('селен 5л')) {
+          return '5l';
+        }
+        if (name.includes('малыш 5л') || name.includes('малышл 5л')) {
+          return '5l';
+        }
+        if (name.includes('тара 19л')) {
+          return '19l';
+        }
+        
+        // По умолчанию 19л для старых заявок
         return '19l';
       };
       
@@ -639,7 +667,21 @@ export default function LogisticsPage() {
         return volume;
       }
       
-      // По умолчанию 19л
+      // Проверяем точные названия продуктов
+      if (name.includes('хрустальная 5л') || name.includes('хрустальаня 5л')) {
+        return '5l';
+      }
+      if (name.includes('селен 5л')) {
+        return '5l';
+      }
+      if (name.includes('малыш 5л') || name.includes('малышл 5л')) {
+        return '5l';
+      }
+      if (name.includes('тара 19л')) {
+        return '19l';
+      }
+      
+      // По умолчанию 19л для старых заявок
       return '19l';
     };
     
