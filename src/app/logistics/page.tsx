@@ -2044,14 +2044,15 @@ export default function LogisticsPage() {
                             />
                           </td>
                           <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
-                            {lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))
-                              ? Number(lead.price)
-                              : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
-                                  const quantity = parseInt(product.quantity) || 0;
-                                  const price = parseFloat(product.price || '0');
-                                  return sum + (quantity * price);
-                                }, 0)
-                            } ₸
+                            {(
+                              lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))
+                                ? Number(lead.price)
+                                : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
+                                    const quantity = parseInt(product.quantity) || 0;
+                                    const price = parseFloat(product.price || '0');
+                                    return sum + (quantity * price);
+                                  }, 0)
+                            ).toLocaleString()} ₸
                           </td>
                           <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <div className="truncate max-w-[150px] sm:max-w-none">{lead.comment || '-'}</div>
@@ -2202,14 +2203,15 @@ export default function LogisticsPage() {
                         />
                       </td>
                       <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
-                        {lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))
-                          ? Number(lead.price)
-                          : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
-                              const quantity = parseInt(product.quantity) || 0;
-                              const price = parseFloat(product.price || '0');
-                              return sum + (quantity * price);
-                            }, 0)
-                        } ₸
+                        {(
+                          lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))
+                            ? Number(lead.price)
+                            : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
+                                const quantity = parseInt(product.quantity) || 0;
+                                const price = parseFloat(product.price || '0');
+                                return sum + (quantity * price);
+                              }, 0)
+                        ).toLocaleString()} ₸
                       </td>
                       <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                         <div className="truncate max-w-[150px] sm:max-w-none">{lead.comment || '-'}</div>
