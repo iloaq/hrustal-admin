@@ -7,6 +7,7 @@ const prisma = new PrismaClient();
 function serializeLeads(leads: any[]) {
   return leads.map((lead: any) => ({
     ...lead,
+    price: lead.price ? Number(lead.price) : null,
     lead_id: Number(lead.lead_id),
     status_id: lead.status_id ? Number(lead.status_id) : null,
     responsible_user_id: lead.responsible_user_id ? Number(lead.responsible_user_id) : null,
@@ -60,11 +61,12 @@ export async function GET(request: Request) {
         created_at: 'desc'
       }
     });
+
+    console.log('API: Получено заявок:', leads);
     
     const serializedLeads = serializeLeads(leads);
     console.log(`API: Получено ${serializedLeads.length} заявок`);
-    console.log('API: Пример заявки:', serializedLeads[0]);
-    console.log('API: Поле dotavleno в примере:', serializedLeads[0]?.dotavleno);
+    console.log('API: Пример заявки:', serializedLeads);
     return NextResponse.json(serializedLeads);
   } catch (error) {
     console.error('Error fetching leads:', error);

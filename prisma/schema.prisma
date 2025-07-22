@@ -24,11 +24,12 @@ model Lead {
   delivery_time         String?           @db.VarChar(255)
   na_zamenu             Boolean?
   oplata                String?           @db.VarChar(255)
-  stat_oplata           Int?              @default(1) // 1-не плачено, 2-оплачен в аванс, 3-частично оплачен, 4-оплачен
-  dotavleno             Boolean?          @default(false) // доставлено
   comment               String?           @db.VarChar(600)
   odin_s                String?           @db.VarChar(255)
-  route_exported_at     DateTime?         // время выгрузки в маршрутные листы
+  dotavleno             Boolean?          @default(false)
+  route_exported_at     DateTime?
+  stat_oplata           Int?              @default(1)
+  price                 String?           @db.VarChar(255)
   production_orders     ProductionOrder[]
   truck_assignments     TruckAssignment[]
 
@@ -106,23 +107,26 @@ model TruckLoading {
   @@map("truck_loadings")
 }
 
-// Производство по дням и времени
 model ProductionSession {
-  id                  BigInt   @id @default(autoincrement())
-  date                DateTime @db.Date
-  time_slot           String   @db.VarChar(20) // Утро, День, Вечер
-  
-  // Произведено
-  hrustalnaya_produced Int     @default(0)
-  malysh_produced     Int     @default(0)
-  selen_produced      Int     @default(0)
-  
-  // Свободные тары
-  bottles_19l_free    Int     @default(100)
-  
-  created_at          DateTime @default(now())
-  updated_at          DateTime @updatedAt
-  
+  id                   BigInt   @id @default(autoincrement())
+  date                 DateTime @db.Date
+  time_slot            String   @db.VarChar(20)
+  hrustalnaya_produced Int      @default(0)
+  malysh_produced      Int      @default(0)
+  selen_produced       Int      @default(0)
+  bottles_19l_free     Int      @default(100)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
   @@unique([date, time_slot])
   @@map("production_sessions")
+}
+
+model truck_configs {
+  id           BigInt   @id @default(autoincrement())
+  date         DateTime @unique @db.Date
+  totalTrucks  Int
+  regionGroups String
+  created_at   DateTime @default(now())
+  updated_at   DateTime
 }

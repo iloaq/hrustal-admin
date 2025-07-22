@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       }
     });
 
-    const trucks = ['Машина 1', 'Машина 2', 'Машина 3', 'Машина 4', 'Машина 5'];
+    const trucks = ['Машина 1', 'Машина 2', 'Машина 3', 'Машина 4', 'Машина 5']; // 6-8 только вручную
     const assignments: {[key: string]: string} = {};
     
     // Группируем по регионам для лучшего распределения

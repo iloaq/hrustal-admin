@@ -108,7 +108,7 @@ const createLeadsTableHTML = (
     };
 
     filteredLeads.forEach(lead => {
-      const leadSum: number = (lead.price && !isNaN(Number(lead.price))
+      const leadSum: number = (lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))
         ? Number(lead.price)
         : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
             const quantity = parseInt(product.quantity) || 0;
@@ -300,9 +300,9 @@ const createLeadsTableHTML = (
         
         return `${shortName} ${product.quantity}`;
       }).join(', ');
-      const leadSum: number = (lead.price && !isNaN(Number(lead.price))
+      const leadSum: number = (lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))
         ? Number(lead.price)
-        : products.reduce((sum: number, product: any) => {
+        : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
             const quantity = parseInt(product.quantity) || 0;
             const price = parseFloat(product.price || '0');
             return sum + (quantity * price);
@@ -686,7 +686,7 @@ export default function LogisticsPage() {
     };
     
     leads.forEach(lead => {
-      const leadSum: number = (lead.price && !isNaN(Number(lead.price))
+      const leadSum: number = (lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))
         ? Number(lead.price)
         : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
             const quantity = parseInt(product.quantity) || 0;
@@ -1343,7 +1343,7 @@ export default function LogisticsPage() {
                   filteredLeads.forEach(lead => {
                     const paymentMethods = (lead.oplata || 'Не указан').split(',').map(method => method.trim());
                     
-                    const leadSum = lead.price && !isNaN(Number(lead.price))
+                    const leadSum = lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))
                       ? Number(lead.price)
                       : (Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
                           const quantity = parseInt(product.quantity) || 0;
@@ -2044,13 +2044,14 @@ export default function LogisticsPage() {
                             />
                           </td>
                           <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
-                            {lead.price && !isNaN(Number(lead.price))
+                            {lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))
                               ? Number(lead.price)
-                              : (Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
+                              : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
                                   const quantity = parseInt(product.quantity) || 0;
                                   const price = parseFloat(product.price || '0');
                                   return sum + (quantity * price);
-                                }, 0)} ₸
+                                }, 0)
+                            } ₸
                           </td>
                           <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <div className="truncate max-w-[150px] sm:max-w-none">{lead.comment || '-'}</div>
@@ -2068,6 +2069,9 @@ export default function LogisticsPage() {
                               <option value="Машина 3">Машина 3</option>
                               <option value="Машина 4">Машина 4</option>
                               <option value="Машина 5">Машина 5</option>
+                              <option value="Машина 6">Машина 6</option>
+                              <option value="Машина 7">Машина 7</option>
+                              <option value="Машина 8">Машина 8</option>
                             </select>
                           </td>
                         </tr>
@@ -2198,13 +2202,14 @@ export default function LogisticsPage() {
                         />
                       </td>
                       <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
-                        {lead.price && !isNaN(Number(lead.price))
+                        {lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))
                           ? Number(lead.price)
-                          : (Object.values(lead.products || {}) as any[]).reduce((sum: number, product: any): number => {
+                          : Object.values(lead.products || {}).reduce((sum: number, product: any) => {
                               const quantity = parseInt(product.quantity) || 0;
                               const price = parseFloat(product.price || '0');
                               return sum + (quantity * price);
-                            }, 0)} ₸
+                            }, 0)
+                        } ₸
                       </td>
                       <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                         <div className="truncate max-w-[150px] sm:max-w-none">{lead.comment || '-'}</div>
@@ -2222,6 +2227,9 @@ export default function LogisticsPage() {
                           <option value="Машина 3">Машина 3</option>
                           <option value="Машина 4">Машина 4</option>
                           <option value="Машина 5">Машина 5</option>
+                          <option value="Машина 6">Машина 6</option>
+                          <option value="Машина 7">Машина 7</option>
+                          <option value="Машина 8">Машина 8</option>
                         </select>
                       </td>
                     </tr>
