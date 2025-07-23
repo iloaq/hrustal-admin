@@ -308,7 +308,7 @@ const createLeadsTableHTML = (
             return sum + (quantity * price);
           }, 0)) as number;
       const isPaid = lead.stat_oplata === 1;
-      const paidMark = isPaid ? '<span style="color: #10b981; font-weight: bold; margin-left: 4px;">+</span>' : '';
+      const paidMark = isPaid ? '<span style="color: #10b981; font-size: 15px; font-weight: bold; margin-left: 4px;">+</span>' : '';
       tableHTML += `
         <tr style="page-break-inside: avoid; ${lead.dotavleno ? 'border-left: 4px solid #10b981;' : ''}">
           <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px; font-weight: bold;">${startIndex + i + 1}</td>
@@ -606,7 +606,7 @@ export default function LogisticsPage() {
     ];
     
     return fields.some(field => 
-      field && field.toLowerCase().includes(searchTerm)
+      field && String(field).toLowerCase().includes(searchTerm)
     );
   };
 
