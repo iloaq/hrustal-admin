@@ -1367,6 +1367,18 @@ export default function LogisticsPage() {
                     });
                   });
                   
+                  // Новый блок: подсчет товаров по всем заявкам
+                  const productTotals: {[key: string]: number} = {};
+                  filteredLeads.forEach(lead => {
+                    const products = Object.values(lead.products || {});
+                    products.forEach((product: any) => {
+                      const name = product.name.trim();
+                      const quantity = parseInt(product.quantity) || 0;
+                      if (!productTotals[name]) productTotals[name] = 0;
+                      productTotals[name] += quantity;
+                    });
+                  });
+                  
                   // Создаем HTML отчет
                   let reportHTML = `
                     <!DOCTYPE html>
@@ -1386,6 +1398,9 @@ export default function LogisticsPage() {
                           .payment-section { margin-bottom: 40px; }
                           .payment-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; }
                           .summary { background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+                          .products-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                          .products-table th, .products-table td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+                          .products-table th { background-color: #e0e7ff; font-weight: bold; }
                         </style>
                       </head>
                       <body>
@@ -1394,17 +1409,31 @@ export default function LogisticsPage() {
                           <h2>Дата: ${selectedDate}</h2>
                           <p>Общее количество заявок: ${filteredLeads.length}</p>
                         </div>
+                        <div class="summary">
+                          <h3>Сводка по проданным товарам (без литров):</h3>
+                          <table class="products-table">
+                            <thead>
+                              <tr>
+                                <th>Товар</th>
+                                <th>Количество</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              ${Object.entries(productTotals).map(([name, qty]) => `<tr><td>${name}</td><td>${qty}</td></tr>`).join('')}
+                            </tbody>
+                          </table>
+                        </div>
                         
-                                                 <div class="summary">
-                           <h3>Сводка по способам оплаты (заявки с множественными способами учитываются полностью в каждом способе):</h3>
-                           <div style="margin-bottom: 15px;">
-                             <button onclick="copyAllOrganizations()" style="margin-right: 10px; padding: 8px 12px; background-color: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                               Копировать все организации
-                             </button>
-                             <button onclick="copyAllQuantities()" style="padding: 8px 12px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                               Копировать все количества
-                             </button>
-                           </div>
+                        <div class="summary">
+                          <h3>Сводка по способам оплаты (заявки с множественными способами учитываются полностью в каждом способе):</h3>
+                          <div style="margin-bottom: 15px;">
+                            <button onclick="copyAllOrganizations()" style="margin-right: 10px; padding: 8px 12px; background-color: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                              Копировать все организации
+                            </button>
+                            <button onclick="copyAllQuantities()" style="padding: 8px 12px; background-color: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                              Копировать все количества
+                            </button>
+                          </div>
                           <table class="stats-table">
                             <thead>
                               <tr>
@@ -2144,9 +2173,16 @@ export default function LogisticsPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredLeads.map((lead) => (
+                  {(groupBy === 'none'
+                    ? [...filteredLeads].sort((a, b) => {
+                        const addressA = (a.info?.delivery_address || '').toLowerCase();
+                        const addressB = (b.info?.delivery_address || '').toLowerCase();
+                        return addressA.localeCompare(addressB);
+                      })
+                    : filteredLeads
+                  ).map((lead) => (
                     <tr key={lead.lead_id} className={`hover:bg-gray-50 ${lead.dotavleno ? 'border-l-4 border-l-green-500' : ''} ${lead.route_exported_at ? 'border-l-4 border-l-orange-400' : ''}`}>
-                                                <td className="px-2 sm:px-6 py-2 text-sm font-medium text-gray-900">
+                      <td className="px-2 sm:px-6 py-2 text-sm font-medium text-gray-900">
                             <div className="whitespace-nowrap">
                               <a 
                                 href={`https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}`}
