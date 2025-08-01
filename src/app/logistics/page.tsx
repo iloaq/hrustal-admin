@@ -59,19 +59,24 @@ const createLeadsTableHTML = (
       totalSum: 0 
     };
     
-    const filteredLeads = allLeads.filter(lead => 
-      lead.delivery_date === currentDeliveryDate && 
-      lead.delivery_time === currentDeliveryTime &&
-      lead.assigned_truck === currentTruck
-    );
+    // Для итогов используем ВСЕ заявки данной машины+времени (allLeads), 
+    // а не только заявки текущей страницы (leads)
+    const filteredLeads = allLeads;
 
     console.log('Диагностика итогов:', {
       currentDeliveryDate,
       currentDeliveryTime,
       currentTruck,
-      allLeadsCount: allLeads.length,
+      currentPageLeadsCount: leads.length,
+      allLeadsForTruckTimeCount: allLeads.length,
       filteredLeadsCount: filteredLeads.length,
-      filteredLeadIds: filteredLeads.map(lead => lead.lead_id)
+      currentPageLeadIds: leads.map(lead => lead.lead_id),
+      allLeadsIds: filteredLeads.map(lead => lead.lead_id),
+      sampleProducts: filteredLeads.length > 0 ? Object.values(filteredLeads[0].products || {}).map((p: any) => ({
+        name: p.name,
+        quantity: p.quantity,
+        volume: p.volume
+      })) : []
     });
 
     // Функция для определения объема продукта
@@ -124,28 +129,37 @@ const createLeadsTableHTML = (
         const quantity = parseInt(product.quantity) || 0;
         const volume = getProductVolume(product);
 
-        console.log('Обработка продукта:', {
+        console.log('Обработка продукта в итогах:', {
           leadId: lead.lead_id,
           productName: product.name,
           productNameLower: productName,
           quantity,
           volume,
-          originalVolume: product.volume
+          originalVolume: product.volume,
+          willAddToHrustalnaya19l: productName.includes('хрустальная') && volume === '19l',
+          willAddToMalysh19l: productName.includes('малыш') && volume === '19l',
+          willAddToSelen19l: productName.includes('селен') && volume === '19l'
         });
 
-        // Детальная логика подсчета с разделением по объему
+        // Логика подсчета должна соответствовать логике отображения в столбцах
         if (productName.includes('хрустальная')) {
-          volume === '19l' 
-            ? stats.hrustalnaya_19l += quantity
-            : stats.hrustalnaya_5l += quantity;
+          if (volume === '19l') {
+            stats.hrustalnaya_19l += quantity;
+          } else {
+            stats.hrustalnaya_5l += quantity;
+          }
         } else if (productName.includes('малыш')) {
-          volume === '19l'
-            ? stats.malysh_19l += quantity
-            : stats.malysh_5l += quantity;
+          if (volume === '19l') {
+            stats.malysh_19l += quantity;
+          } else {
+            stats.malysh_5l += quantity;
+          }
         } else if (productName.includes('селен')) {
-          volume === '19l'
-            ? stats.selen_19l += quantity
-            : stats.selen_5l += quantity;
+          if (volume === '19l') {
+            stats.selen_19l += quantity;
+          } else {
+            stats.selen_5l += quantity;
+          }
         } else if (productName.includes('тара') && volume === '5l') {
           stats.tara_5l += quantity;
         } else if (productName.includes('помпа механическая') || productName.includes('механическая помпа')) {
@@ -158,12 +172,13 @@ const createLeadsTableHTML = (
       });
     });
     
+    console.log('Финальная статистика товаров:', stats);
     return stats;
   };
 
   const totalStats = calculateTotalStats();
 
-  console.log('Итоговая статистика для ВСЕЙ машины и времени:', totalStats);
+  console.log('Итоговая статистика для ВСЕХ заявок машины+времени:', totalStats);
 
   // --- Новый шаблон таблицы ---
   let tableHTML = `
@@ -321,7 +336,7 @@ const createLeadsTableHTML = (
           <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px;">${otherProductsList || ''}</td>
           <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px; text-align: right;">${leadSum} ₸${paidMark}</td>
           <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.oplata || ''}</td>
-          <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.comment || ''}| <span>${lead.info?.name || ''}</span>
+          <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.comment || ''} <span>${(lead.info?.name || '').replace(/\s*Контакт\s*/g, '').replace(/\s*Сделка\s*/g, '').trim()}</span>
               <span style="font-size: 13px; color: #666;">${lead.info?.phone || ''}</span></td>
         </tr>
       `;
@@ -330,21 +345,48 @@ const createLeadsTableHTML = (
 
   // Если последняя страница - добавляем итоговую строку
   if (isLastPage) {
+    // Формируем список товаров в соответствии с логикой отображения в столбцах
+    const nonZeroProducts = [];
+    
+    // Столбец "Х" - показываем приоритетно 19л, если есть, иначе 5л
+    if (totalStats.hrustalnaya_19l > 0) {
+      nonZeroProducts.push(`Хрустальная 19л: ${totalStats.hrustalnaya_19l} шт.`);
+    } else if (totalStats.hrustalnaya_5l > 0) {
+      nonZeroProducts.push(`Хрустальная 5л: ${totalStats.hrustalnaya_5l} шт.`);
+    }
+    
+    // Столбец "С" - показываем приоритетно 19л, если есть, иначе 5л  
+    if (totalStats.selen_19l > 0) {
+      nonZeroProducts.push(`Селен 19л: ${totalStats.selen_19l} шт.`);
+    } else if (totalStats.selen_5l > 0) {
+      nonZeroProducts.push(`Селен 5л: ${totalStats.selen_5l} шт.`);
+    }
+    
+    // Столбец "М" - показываем приоритетно 19л, если есть, иначе 5л
+    if (totalStats.malysh_19l > 0) {
+      nonZeroProducts.push(`Малыш 19л: ${totalStats.malysh_19l} шт.`);
+    } else if (totalStats.malysh_5l > 0) {
+      nonZeroProducts.push(`Малыш 5л: ${totalStats.malysh_5l} шт.`);
+    }
+    if (totalStats.tara_5l > 0) {
+      nonZeroProducts.push(`Тара 5л: ${totalStats.tara_5l} шт.`);
+    }
+    if (totalStats.pompa_meh > 0) {
+      nonZeroProducts.push(`Помпа мех.: ${totalStats.pompa_meh} шт.`);
+    }
+    if (totalStats.pompa_el > 0) {
+      nonZeroProducts.push(`Помпа эл.: ${totalStats.pompa_el} шт.`);
+    }
+    if (totalStats.stakanchiki > 0) {
+      nonZeroProducts.push(`Стаканчики: ${totalStats.stakanchiki} шт.`);
+    }
+    
     tableHTML += `
       </tbody>
       <tfoot>
         <tr style="background-color: #f0f0f0; font-weight: bold;">
           <td colspan="6" style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px;">
-            Хрустальная 19л: ${totalStats.hrustalnaya_19l} шт. 
-            Хрустальная 5л: ${totalStats.hrustalnaya_5l} шт.
-            Малыш 19л: ${totalStats.malysh_19l} шт.
-            Малыш 5л: ${totalStats.malysh_5l} шт.
-            Селен 19л: ${totalStats.selen_19l} шт.
-            Селен 5л: ${totalStats.selen_5l} шт.
-            Тара 5л: ${totalStats.tara_5l} шт.
-            Помпа мех.: ${totalStats.pompa_meh} шт.
-            Помпа эл.: ${totalStats.pompa_el} шт.
-            Стаканчики: ${totalStats.stakanchiki} шт.
+            ${nonZeroProducts.join(' ')}
           </td>
           <td style="border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 13px; font-weight: bold;">${totalStats.totalSum} ₸</td>
           <td colspan="2" style="border: 1px solid #ccc; padding: 4px;"></td>
@@ -849,12 +891,14 @@ export default function LogisticsPage() {
       
       if (result.success) {
         const details = result.details;
-        alert(`Успешно распределено ${Object.keys(result.assignments).length} заявок по машинам:\n` +
+        const totalAssigned = Object.keys(result.assignments).length;
+        alert(`Успешно распределено ${totalAssigned} ${totalAssigned === 0 ? '(все уже были назначены)' : 'неназначенных'} заявок по машинам:\n` +
               `Машина 1 (Центр): ${details['Машина 1 (Центр)']} заявок\n` +
               `Машина 2 (Вокзал): ${details['Машина 2 (Вокзал)']} заявок\n` +
               `Машина 3 (Центр ПЗ): ${details['Машина 3 (Центр ПЗ)']} заявок\n` +
               `Машина 4 (Вокзал ПЗ): ${details['Машина 4 (Вокзал ПЗ)']} заявок\n` +
-              `Машина 5 (Универсальная): ${details['Машина 5 (Универсальная)']} заявок`);
+              `Машина 5 (Универсальная): ${details['Машина 5 (Универсальная)']} заявок\n\n` +
+              `🔒 Уже назначенные машины НЕ ИЗМЕНЯЛИСЬ`);
         fetchLeads();
       } else {
         alert('Ошибка при автоматическом распределении');
@@ -1217,7 +1261,7 @@ export default function LogisticsPage() {
                 onClick={autoAssignToTrucks}
                 disabled={autoAssigning}
                 className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400"
-                title="Машина 1→Центр, Машина 2→Вокзал, Машина 3→Центр ПЗ/П/З, Машина 4→Вокзал ПЗ/П/З, Машина 5→Универсальная"
+                title="Автоназначение только для неназначенных заявок. Уже назначенные машины НЕ ИЗМЕНЯЮТСЯ. Машина 1→Центр, Машина 2→Вокзал, Машина 3→Центр ПЗ/П/З, Машина 4→Вокзал ПЗ/П/З, Машина 5→Универсальная"
               >
                 {autoAssigning ? 'Распределяем...' : 'Автораспределение'}
               </button>
