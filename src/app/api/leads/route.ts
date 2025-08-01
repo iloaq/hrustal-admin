@@ -25,119 +25,7 @@ function serializeLeads(leads: any[]) {
   }));
 }
 
-// Функция для автоматического назначения машины по району (только если не назначена)
-async function autoAssignTruckByRegion(lead: any) {
-  try {
-    console.log(`autoAssign - Начало для заявки ${lead.lead_id}`);
-    const info = lead.info as any;
-    const region = info?.region;
-    
-    console.log(`autoAssign - Район для заявки ${lead.lead_id}:`, region);
-    
-    if (!region) {
-      console.log(`autoAssign - Нет района для заявки ${lead.lead_id}`);
-      return null;
-    }
-    
-    // Проверяем, не назначена ли уже машина
-    const existingAssignment = await prisma.truckAssignment.findFirst({
-      where: {
-        lead_id: BigInt(lead.lead_id),
-        status: 'active'
-      }
-    });
-    
-    if (existingAssignment && existingAssignment.truck_name && existingAssignment.truck_name.trim() !== '') {
-      console.log(`autoAssign - У заявки ${lead.lead_id} уже есть назначенная машина: ${existingAssignment.truck_name}`);
-      return existingAssignment;
-    }
-    
-    // Нормализуем название района (приводим к нижнему регистру и убираем лишние пробелы)
-    const normalizedRegion = region.toLowerCase().trim();
-    
-    // Расширенная логика распределения машин по районам
-    const truckAssignments: {[key: string]: string} = {
-      // Центр
-      'центр': 'Машина 1',
-      'центральный': 'Машина 1',
-      'центральный район': 'Машина 1',
-      
-      // Вокзал
-      'вокзал': 'Машина 2',
-      'вокзальный': 'Машина 2',
-      'вокзальный район': 'Машина 2',
-      'ж/д': 'Машина 2',
-      'жд': 'Машина 2',
-      'железнодорожный': 'Машина 2',
-      
-      // Центр ПЗ/П/З
-      'центр пз': 'Машина 3',
-      'центр п/з': 'Машина 3',
-      'центр пз/п/з': 'Машина 3',
-      'центральный пз': 'Машина 3',
-      'центральный п/з': 'Машина 3',
-      
-      // Вокзал ПЗ/П/З
-      'вокзал пз': 'Машина 4',
-      'вокзал п/з': 'Машина 4',
-      'вокзал пз/п/з': 'Машина 4',
-      'вокзальный пз': 'Машина 4',
-      'вокзальный п/з': 'Машина 4',
-    };
-    
-    // Ищем точное совпадение
-    let assignedTruck = truckAssignments[normalizedRegion];
-    
-    // Если точного совпадения нет, ищем частичное совпадение
-    if (!assignedTruck) {
-      for (const [regionKey, truck] of Object.entries(truckAssignments)) {
-        if (normalizedRegion.includes(regionKey) || regionKey.includes(normalizedRegion)) {
-          assignedTruck = truck;
-          break;
-        }
-      }
-    }
-    
-    console.log(`autoAssign - Назначенная машина для района "${region}" (нормализованный: "${normalizedRegion}"):`, assignedTruck);
-    
-    if (!assignedTruck) {
-      console.log(`autoAssign - Нет назначения для района "${region}" - назначаем на Машину 5 (универсальная)`);
-      assignedTruck = 'Машина 5'; // Универсальная машина для неизвестных районов
-    }
-    
-    console.log(`autoAssign - Создаем назначение для заявки ${lead.lead_id} на машину ${assignedTruck}`);
-    
-    // Создаем или обновляем назначение машины
-    const assignment = await prisma.truckAssignment.upsert({
-      where: {
-        lead_id_delivery_date: {
-          lead_id: BigInt(lead.lead_id),
-          delivery_date: lead.delivery_date || new Date()
-        }
-      },
-      update: {
-        truck_name: assignedTruck,
-        delivery_time: lead.delivery_time || '',
-        assigned_at: new Date(),
-        status: 'active'
-      },
-      create: {
-        lead_id: BigInt(lead.lead_id),
-        truck_name: assignedTruck,
-        delivery_date: lead.delivery_date || new Date(),
-        delivery_time: lead.delivery_time || '',
-        assigned_at: new Date(),
-        status: 'active'
-      }
-    });
-    
-    console.log(`autoAssign - Назначение создано для заявки ${lead.lead_id}:`, assignment);
-    return assignment;
-  } catch (error) {
-    console.error(`autoAssign - Ошибка для заявки ${lead.lead_id}:`, error);
-    throw error;
-  }
-}
+
 
 // Функция для создания назначения без немедленного сохранения в БД
 async function createAssignmentForLead(lead: any) {
@@ -290,7 +178,7 @@ export async function GET(request: Request) {
     console.log('GET /api/leads - Получено заявок из БД:', leads.length);
     
     // Пакетное автоназначение для оптимизации производительности
-    const leadsNeedingAssignment = leads.filter(lead => {
+    const leadsNeedingAssignment = leads.filter((lead: any) => {
       const hasActiveAssignment = lead.truck_assignments.length > 0 && 
         lead.truck_assignments[0].truck_name && 
         lead.truck_assignments[0].truck_name.trim() !== '';
