@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
+import { withCache, CacheKeys, invalidateCache } from './cache';
 
 const prisma = new PrismaClient();
 
@@ -138,6 +139,100 @@ async function autoAssignTruckByRegion(lead: any) {
   }
 }
 
+// Функция для создания назначения без немедленного сохранения в БД
+async function createAssignmentForLead(lead: any) {
+  try {
+    const info = lead.info as any;
+    const region = info?.region;
+    
+    if (!region) {
+      return null;
+    }
+    
+    // Проверяем, не назначена ли уже машина
+    const existingAssignment = await prisma.truckAssignment.findFirst({
+      where: {
+        lead_id: BigInt(lead.lead_id),
+        status: 'active'
+      }
+    });
+    
+    if (existingAssignment && existingAssignment.truck_name && existingAssignment.truck_name.trim() !== '') {
+      return existingAssignment;
+    }
+    
+    // Нормализуем название района
+    const normalizedRegion = region.toLowerCase().trim();
+    
+    // Логика распределения машин по районам
+    const truckAssignments: {[key: string]: string} = {
+      'центр': 'Машина 1',
+      'центральный': 'Машина 1',
+      'центральный район': 'Машина 1',
+      'вокзал': 'Машина 2',
+      'вокзальный': 'Машина 2',
+      'вокзальный район': 'Машина 2',
+      'ж/д': 'Машина 2',
+      'жд': 'Машина 2',
+      'железнодорожный': 'Машина 2',
+      'центр пз': 'Машина 3',
+      'центр п/з': 'Машина 3',
+      'центр пз/п/з': 'Машина 3',
+      'центральный пз': 'Машина 3',
+      'центральный п/з': 'Машина 3',
+      'вокзал пз': 'Машина 4',
+      'вокзал п/з': 'Машина 4',
+      'вокзал пз/п/з': 'Машина 4',
+      'вокзальный пз': 'Машина 4',
+      'вокзальный п/з': 'Машина 4',
+    };
+    
+    let assignedTruck = truckAssignments[normalizedRegion];
+    
+    if (!assignedTruck) {
+      for (const [regionKey, truck] of Object.entries(truckAssignments)) {
+        if (normalizedRegion.includes(regionKey) || regionKey.includes(normalizedRegion)) {
+          assignedTruck = truck;
+          break;
+        }
+      }
+    }
+    
+    if (!assignedTruck) {
+      assignedTruck = 'Машина 5';
+    }
+    
+    // Создаем назначение в БД
+    const assignment = await prisma.truckAssignment.upsert({
+      where: {
+        lead_id_delivery_date: {
+          lead_id: BigInt(lead.lead_id),
+          delivery_date: lead.delivery_date || new Date()
+        }
+      },
+      update: {
+        truck_name: assignedTruck,
+        delivery_time: lead.delivery_time || '',
+        assigned_at: new Date(),
+        status: 'active'
+      },
+      create: {
+        lead_id: BigInt(lead.lead_id),
+        truck_name: assignedTruck,
+        delivery_date: lead.delivery_date || new Date(),
+        delivery_time: lead.delivery_time || '',
+        assigned_at: new Date(),
+        status: 'active'
+      }
+    });
+    
+    return assignment;
+  } catch (error) {
+    console.error(`createAssignmentForLead - Ошибка для заявки ${lead.lead_id}:`, error);
+    return null;
+  }
+}
+
 export async function GET(request: Request) {
   try {
     console.log('GET /api/leads - Начало запроса');
@@ -163,68 +258,70 @@ export async function GET(request: Request) {
     
     console.log('GET /api/leads - Условия запроса:', whereCondition);
     
-    const leads = await prisma.lead.findMany({
-      where: whereCondition,
-      include: {
-        truck_assignments: {
-          where: {
-            status: 'active'
+    // Используем кэширование для часто запрашиваемых данных
+    const cacheKey = CacheKeys.leads(date || undefined);
+    const leads = await withCache(
+      cacheKey,
+      async () => {
+        console.time('DB Query: leads');
+        const result = await prisma.lead.findMany({
+          where: whereCondition,
+          include: {
+            truck_assignments: {
+              where: {
+                status: 'active'
+              },
+              orderBy: {
+                assigned_at: 'desc'
+              },
+              take: 1
+            }
           },
           orderBy: {
-            assigned_at: 'desc'
-          },
-          take: 1
-        }
+            created_at: 'desc'
+          }
+        });
+        console.timeEnd('DB Query: leads');
+        return result;
       },
-      orderBy: {
-        created_at: 'desc'
-      }
-    });
+      60000 // Кэшируем на 1 минуту
+    );
 
     console.log('GET /api/leads - Получено заявок из БД:', leads.length);
     
-    // Автоматически назначаем машины только для заявок без назначения
-    let assignmentsCreated = 0;
-    for (const lead of leads) {
+    // Пакетное автоназначение для оптимизации производительности
+    const leadsNeedingAssignment = leads.filter(lead => {
       const hasActiveAssignment = lead.truck_assignments.length > 0 && 
         lead.truck_assignments[0].truck_name && 
         lead.truck_assignments[0].truck_name.trim() !== '';
+      return !hasActiveAssignment;
+    });
+    
+    console.log(`GET /api/leads - Заявок требующих назначения: ${leadsNeedingAssignment.length}`);
+    
+    if (leadsNeedingAssignment.length > 0) {
+      const batchAssignments = [];
       
-      if (!hasActiveAssignment) {
+      for (const lead of leadsNeedingAssignment) {
         try {
-          await autoAssignTruckByRegion(lead);
-          assignmentsCreated++;
+          const assignment = await createAssignmentForLead(lead);
+          if (assignment) {
+            batchAssignments.push(assignment);
+            // Обновляем данные в памяти
+            lead.truck_assignments = [assignment];
+          }
         } catch (error) {
-          console.error(`GET /api/leads - Ошибка автоназначения для заявки ${lead.lead_id}:`, error);
+          console.error(`GET /api/leads - Ошибка подготовки назначения для заявки ${lead.lead_id}:`, error);
         }
       }
-    }
-    
-    if (assignmentsCreated > 0) {
-      console.log(`GET /api/leads - Создано новых назначений: ${assignmentsCreated}`);
       
-      // Перезапрашиваем данные с обновленными назначениями
-      const updatedLeads = await prisma.lead.findMany({
-        where: whereCondition,
-        include: {
-          truck_assignments: {
-            where: {
-              status: 'active'
-            },
-            orderBy: {
-              assigned_at: 'desc'
-            },
-            take: 1
-          }
-        },
-        orderBy: {
-          created_at: 'desc'
-        }
-      });
-      
-      const serializedLeads = serializeLeads(updatedLeads);
-      console.log(`GET /api/leads - Возвращаем обновленные данные: ${serializedLeads.length} заявок`);
-      return NextResponse.json(serializedLeads);
+             console.log(`GET /api/leads - Создано назначений в памяти: ${batchAssignments.length}`);
+       
+       // Инвалидируем кэш после создания новых назначений
+       if (batchAssignments.length > 0) {
+         invalidateCache('leads');
+         invalidateCache('truck_assignments');
+       }
     }
     
     const serializedLeads = serializeLeads(leads);
