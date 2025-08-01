@@ -458,6 +458,7 @@ export default function LogisticsPage() {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [groupBy, setGroupBy] = useState<GroupByType>('none');
+  const [isEditing, setIsEditing] = useState(false); // Флаг для отключения автообновления
 
   useEffect(() => {
     fetchLeads();
@@ -485,14 +486,18 @@ export default function LogisticsPage() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Автообновление каждые 30 секунд
+  // Автообновление каждые 30 секунд (отключается во время редактирования)
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchLeads();
+      if (!isEditing) {
+        fetchLeads();
+      } else {
+        console.log('Автообновление пропущено - идет редактирование');
+      }
     }, 30000); // 30 секунд
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isEditing]);
 
   // Server-Sent Events для реального времени
   useEffect(() => {
@@ -512,6 +517,10 @@ export default function LogisticsPage() {
             } else if (data.type === 'update') {
               console.log('Получено обновление, обновляем данные...');
               fetchLeads();
+            } else if (data.type === 'payment_status_updated') {
+              console.log('Получено SSE обновление статуса оплаты:', data.data);
+              // НЕ вызываем fetchLeads(), чтобы не сбросить локальные изменения
+              // Локальное состояние уже обновлено в handlePaymentStatusChange
             } else if (data.type === 'ping') {
               console.log('Получен ping от сервера');
             }
@@ -954,9 +963,13 @@ export default function LogisticsPage() {
     try {
       console.log('handlePaymentStatusChange - Начало:', { leadId, isPaid });
       
+      // Устанавливаем флаг редактирования для отключения автообновления
+      setIsEditing(true);
+      
       const lead = leads.find(l => l.lead_id === leadId);
       if (!lead) {
         console.log('handlePaymentStatusChange - Заявка не найдена:', leadId);
+        setIsEditing(false);
         return;
       }
 
@@ -968,6 +981,33 @@ export default function LogisticsPage() {
       ));
 
       console.log('handlePaymentStatusChange - Локальное состояние обновлено');
+
+      // Сначала обновляем статус оплаты в базе данных
+      const updateResponse = await fetch('/api/leads', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          leadId: leadId,
+          stat_oplata: isPaid ? 1 : 0
+        })
+      });
+
+      if (!updateResponse.ok) {
+        console.error('handlePaymentStatusChange - Ошибка обновления в БД:', updateResponse.status);
+        // Возвращаем локальное состояние к прежнему значению
+        setLeads(prev => prev.map(lead => 
+          lead.lead_id === leadId 
+            ? { ...lead, stat_oplata: isPaid ? 0 : 1 }
+            : lead
+        ));
+        setIsEditing(false); // Сбрасываем флаг при ошибке
+        alert('Ошибка при обновлении статуса оплаты в базе данных');
+        return;
+      }
+
+      console.log('handlePaymentStatusChange - Статус оплаты обновлен в БД');
 
       // Параллельно отправляем данные на n8n webhook
       const webhookData = {
@@ -1014,8 +1054,15 @@ export default function LogisticsPage() {
         // Не показываем ошибку пользователю, так как локальное состояние уже обновлено
       });
 
+      // Сбрасываем флаг редактирования через небольшую задержку
+      setTimeout(() => {
+        setIsEditing(false);
+        console.log('handlePaymentStatusChange - Редактирование завершено, автообновление включено');
+      }, 2000); // 2 секунды защиты от автообновления
+
     } catch (error) {
       console.error('Error updating payment status:', error);
+      setIsEditing(false); // Сбрасываем флаг при ошибке
       alert('Ошибка при обновлении статуса оплаты');
     }
   };
