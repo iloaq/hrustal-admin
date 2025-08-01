@@ -494,7 +494,7 @@ export default function LogisticsPage() {
       } else {
         console.log('Автообновление пропущено - идет редактирование');
       }
-    }, 30000); // 30 секунд
+    }, 10000); // 10 секунд
 
     return () => clearInterval(interval);
   }, [isEditing]);

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       
       controller.enqueue(encoder.encode(welcomeMessage));
       
-      // Отправляем ping каждые 60 секунд для поддержания соединения
+      // Отправляем ping каждые 10 секунд для быстрого обнаружения изменений
       const pingInterval = setInterval(() => {
         const pingMessage = `data: ${JSON.stringify({
           type: 'ping',
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
           clearInterval(pingInterval);
           removeConnection(date);
         }
-      }, 60000);
+      }, 10000);
 
       // Очистка при закрытии соединения
       return () => {

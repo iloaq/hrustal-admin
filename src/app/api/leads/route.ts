@@ -172,7 +172,7 @@ export async function GET(request: Request) {
         console.timeEnd('DB Query: leads');
         return result;
       },
-      60000 // Кэшируем на 1 минуту
+      15000 // Кэшируем на 15 секунд
     );
 
     console.log('GET /api/leads - Получено заявок из БД:', leads.length);
