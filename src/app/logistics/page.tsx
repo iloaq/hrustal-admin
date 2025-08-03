@@ -335,7 +335,7 @@ const createLeadsTableHTML = (
           <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 15px; font-weight: bold;">${malyshDisplay}</td>
           <td style="border: 1px solid #ccc; padding: 4px; text-align: center; font-size: 12px;">${otherProductsList || ''}</td>
           <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px; text-align: right;">${leadSum} ₸${paidMark}</td>
-          <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.oplata || ''}</td>
+          <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${getPaymentMethod(lead) || ''}</td>
           <td style="border: 1px solid #ccc; padding: 4px; font-size: 13px;">${lead.comment || ''} <span>${(lead.info?.name || '').replace(/\s*Контакт\s*/g, '').replace(/\s*Сделка\s*/g, '').trim()}</span>
               <span style="font-size: 13px; color: #666;">${lead.info?.phone || ''}</span></td>
         </tr>
@@ -419,6 +419,22 @@ interface Lead {
   price?: string; // цена
   route_exported_at?: string; // время экспорта в маршрутные листы
 }
+
+// Вспомогательная функция для получения способа оплаты
+const getPaymentMethod = (lead: Lead): string => {
+  // Если поле oplata не пустое, используем его
+  if (lead.oplata && lead.oplata.trim()) {
+    return lead.oplata;
+  }
+  
+  // Иначе используем info.con_oplata
+  if (lead.info?.con_oplata && lead.info.con_oplata.trim()) {
+    return lead.info.con_oplata;
+  }
+  
+  // Если оба поля пустые, возвращаем пустую строку
+  return '';
+};
 
 // interface TruckLoading {
 //   id: string;
@@ -640,7 +656,7 @@ export default function LogisticsPage() {
       lead.delivery_time,
       lead.status_name,
       lead.assigned_truck,
-      lead.oplata,
+      getPaymentMethod(lead),
       lead.comment,
       lead.price,
       lead.total_liters?.toString(),
@@ -1018,7 +1034,7 @@ export default function LogisticsPage() {
         delivery_date: lead.delivery_date,
         delivery_time: lead.delivery_time,
         payment_status: isPaid ? 1 : 0,
-        payment_method: lead.oplata || '',
+        payment_method: getPaymentMethod(lead),
         total_amount: lead.price || '0',
         products: lead.products || {},
         assigned_truck: lead.assigned_truck || '',
@@ -1432,7 +1448,7 @@ export default function LogisticsPage() {
                   const paymentStats: {[key: string]: {count: number, totalSum: number, leads: any[]}} = {};
                   
                   filteredLeads.forEach(lead => {
-                    const paymentMethods = (lead.oplata || 'Не указан').split(',').map(method => method.trim());
+                    const paymentMethods = (getPaymentMethod(lead) || 'Не указан').split(',').map(method => method.trim());
                     
                     const leadSum = lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))
                       ? Number(lead.price)
@@ -1617,7 +1633,7 @@ export default function LogisticsPage() {
                             const allLeads = ${JSON.stringify(filteredLeads).replace(/'/g, "\\'")};
                             // Фильтруем только безналичные заявки
                             const beznalLeads = allLeads.filter(lead => {
-                              const paymentMethods = (lead.oplata || '').toLowerCase();
+                              const paymentMethods = (lead.oplata || lead.info?.con_oplata || '').toLowerCase();
                               return paymentMethods.includes('безнал') || 
                                      paymentMethods.includes('безналич');
                             });
@@ -1646,7 +1662,7 @@ export default function LogisticsPage() {
                             const allLeads = ${JSON.stringify(filteredLeads).replace(/'/g, "\\'")};
                             // Фильтруем только безналичные заявки
                             const beznalLeads = allLeads.filter(lead => {
-                              const paymentMethods = (lead.oplata || '').toLowerCase();
+                              const paymentMethods = (lead.oplata || lead.info?.con_oplata || '').toLowerCase();
                               return paymentMethods.includes('безнал') || 
                                      paymentMethods.includes('безналич');
                             });
@@ -2152,7 +2168,7 @@ export default function LogisticsPage() {
                             </span>
                           </td>
                           <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
-                            {lead.oplata || '-'}
+                            {getPaymentMethod(lead) || '-'}
                           </td>
                           <td className="px-2 sm:px-6 py-2 text-sm text-gray-900 text-center">
                             <input
@@ -2318,7 +2334,7 @@ export default function LogisticsPage() {
                         </span>
                       </td>
                       <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
-                        {lead.oplata || '-'}
+                        {getPaymentMethod(lead) || '-'}
                       </td>
                       <td className="px-2 sm:px-6 py-2 text-sm text-gray-900 text-center">
                         <input
