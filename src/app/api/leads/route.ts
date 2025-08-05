@@ -74,6 +74,7 @@ async function createAssignmentForLead(lead: any) {
       'вокзал пз/п/з': 'Машина 4',
       'вокзальный пз': 'Машина 4',
       'вокзальный п/з': 'Машина 4',
+      'машина 5': 'Машина 5',
     };
     
     let assignedTruck = truckAssignments[normalizedRegion];
@@ -88,7 +89,7 @@ async function createAssignmentForLead(lead: any) {
     }
     
     if (!assignedTruck) {
-      assignedTruck = 'Машина 5';
+      assignedTruck = '';
     }
     
     // Создаем назначение в БД
@@ -130,20 +131,27 @@ export async function GET(request: Request) {
     
     console.log('GET /api/leads - Параметры:', { date });
     
+    // Требуем обязательную дату
+    if (!date) {
+      console.log('GET /api/leads - Ошибка: дата не указана');
+      return NextResponse.json(
+        { error: 'Date parameter is required' },
+        { status: 400 }
+      );
+    }
+    
     // Базовые условия запроса
     const whereCondition: any = {};
     
-    // Если указана дата, фильтруем по дате доставки
-    if (date) {
-      const deliveryDate = new Date(date);
-      const nextDay = new Date(deliveryDate);
-      nextDay.setDate(nextDay.getDate() + 1);
-      
-      whereCondition.delivery_date = {
-        gte: deliveryDate,
-        lt: nextDay
-      };
-    }
+    // Фильтруем по дате доставки
+    const deliveryDate = new Date(date);
+    const nextDay = new Date(deliveryDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    
+    whereCondition.delivery_date = {
+      gte: deliveryDate,
+      lt: nextDay
+    };
     
     console.log('GET /api/leads - Условия запроса:', whereCondition);
     
@@ -173,7 +181,7 @@ export async function GET(request: Request) {
         console.timeEnd('DB Query: leads');
         return result;
       },
-      15000 // Кэшируем на 15 секунд
+      3000 // Уменьшаем кэш до 3 секунд
     );
 
     console.log('GET /api/leads - Получено заявок из БД:', leads.length);

@@ -502,7 +502,7 @@ export default function LogisticsPage() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Автообновление каждые 30 секунд (отключается во время редактирования)
+  // Уменьшаем интервал автообновления с 10 до 3 секунд
   useEffect(() => {
     const interval = setInterval(() => {
       if (!isEditing) {
@@ -510,7 +510,7 @@ export default function LogisticsPage() {
       } else {
         console.log('Автообновление пропущено - идет редактирование');
       }
-    }, 10000); // 10 секунд
+    }, 3000); // Уменьшаем с 10 до 3 секунд
 
     return () => clearInterval(interval);
   }, [isEditing]);
@@ -575,40 +575,14 @@ export default function LogisticsPage() {
     };
   }, [selectedDate]);
 
-  // Автоматическое автораспределение при загрузке, если есть неразобранные заявки
+  // Убираем автоназначение из useEffect, так как оно теперь происходит на сервере
   useEffect(() => {
     if (!loading && leads.length > 0) {
-      const unassigned = leads.filter(lead => !lead.assigned_truck);
-      if (unassigned.length > 0) {
-        silentAutoAssignToTrucks();
-      }
+      // Убираем автоназначение - теперь оно происходит на сервере при загрузке данных
+      console.log('Данные загружены, автоназначение происходит на сервере');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, leads.length]);
-
-  // Тихая функция автораспределения без уведомлений
-  const silentAutoAssignToTrucks = async () => {
-    try {
-      const response = await fetch('/api/leads/assign', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          date: selectedDate,
-          time: selectedTime
-        })
-      });
-
-      const result = await response.json();
-      
-      if (result.success) {
-        fetchLeads();
-      }
-    } catch (error) {
-      console.error('Error silent auto-assigning:', error);
-    }
-  };
 
   const fetchLeads = async (showRefreshing = false) => {
     if (showRefreshing) {
@@ -616,7 +590,8 @@ export default function LogisticsPage() {
     }
     
     try {
-      const response = await fetch('/api/leads');
+      // Добавляем дату в запрос
+      const response = await fetch(`/api/leads?date=${selectedDate}`);
       const data = await response.json();
       
       if (Array.isArray(data)) {
