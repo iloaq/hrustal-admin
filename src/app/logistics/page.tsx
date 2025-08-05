@@ -537,6 +537,10 @@ export default function LogisticsPage() {
               console.log('Получено SSE обновление статуса оплаты:', data.data);
               // НЕ вызываем fetchLeads(), чтобы не сбросить локальные изменения
               // Локальное состояние уже обновлено в handlePaymentStatusChange
+            } else if (data.type === 'cache_reset') {
+              console.log('Получена команда сброса кэша:', data.message);
+              // Принудительно перезагружаем страницу для получения актуальной версии
+              window.location.reload();
             } else if (data.type === 'ping') {
               console.log('Получен ping от сервера');
             }

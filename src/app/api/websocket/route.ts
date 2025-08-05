@@ -30,7 +30,14 @@ export async function GET(request: NextRequest) {
         })}\n\n`;
         
         try {
-          controller.enqueue(encoder.encode(pingMessage));
+          // Проверяем, что контроллер не закрыт перед отправкой
+          if (controller.desiredSize !== null) {
+            controller.enqueue(encoder.encode(pingMessage));
+          } else {
+            console.log('Контроллер закрыт, останавливаем ping');
+            clearInterval(pingInterval);
+            removeConnection(date);
+          }
         } catch (error) {
           console.error('Ошибка отправки ping:', error);
           clearInterval(pingInterval);
@@ -61,4 +68,4 @@ export async function GET(request: NextRequest) {
       'Access-Control-Allow-Headers': 'Cache-Control',
     },
   });
-} 
+}
