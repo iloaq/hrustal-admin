@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 // import jsPDF from 'jspdf';
 
 // Функция для создания PDF с поддержкой кириллицы
@@ -475,9 +475,35 @@ export default function LogisticsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [groupBy, setGroupBy] = useState<GroupByType>('none');
   const [isEditing, setIsEditing] = useState(false); // Флаг для отключения автообновления
+  
+  // Используем useRef для хранения актуальной даты
+  const currentDateRef = useRef(selectedDate);
 
   useEffect(() => {
-    fetchLeads();
+    console.log('useEffect - Дата изменилась на:', selectedDate);
+    currentDateRef.current = selectedDate; // Обновляем ref
+    
+    // Временно отключаем автообновление при смене даты
+    setIsEditing(true);
+    
+    // Принудительно очищаем кэш при смене даты
+    fetch('/api/leads/cache-clear', { method: 'POST' })
+      .then(() => {
+        console.log('Кэш очищен для новой даты:', selectedDate);
+        fetchLeads(false, selectedDate);
+      })
+      .catch((error) => {
+        console.error('Ошибка очистки кэша:', error);
+        fetchLeads(false, selectedDate);
+      });
+    
+    // Включаем автообновление через 5 секунд
+    const timer = setTimeout(() => {
+      setIsEditing(false);
+      console.log('Автообновление включено для даты:', selectedDate);
+    }, 5000);
+    
+    return () => clearTimeout(timer);
   }, [selectedDate, selectedTime]);
 
   // Горячие клавиши для поиска
@@ -504,16 +530,23 @@ export default function LogisticsPage() {
 
   // Уменьшаем интервал автообновления с 10 до 3 секунд
   useEffect(() => {
+    console.log('Создаем интервал автообновления, isEditing:', isEditing, 'selectedDate:', selectedDate, 'ref.current:', currentDateRef.current);
+    
     const interval = setInterval(() => {
       if (!isEditing) {
-        fetchLeads();
+        const currentDate = currentDateRef.current;
+        console.log('Автообновление - selectedDate:', selectedDate, 'ref.current:', currentDate, 'isEditing:', isEditing);
+        fetchLeads(false, currentDate);
       } else {
-        console.log('Автообновление пропущено - идет редактирование');
+        console.log('Автообновление пропущено - идет редактирование, isEditing:', isEditing);
       }
     }, 3000); // Уменьшаем с 10 до 3 секунд
 
-    return () => clearInterval(interval);
-  }, [isEditing]);
+    return () => {
+      console.log('Очищаем интервал автообновления');
+      clearInterval(interval);
+    };
+  }, [isEditing]); // Убираем selectedDate из зависимостей, используем ref
 
   // Server-Sent Events для реального времени
   useEffect(() => {
@@ -531,8 +564,9 @@ export default function LogisticsPage() {
             if (data.type === 'connected') {
               console.log('SSE соединение установлено');
             } else if (data.type === 'update') {
-              console.log('Получено обновление, обновляем данные...');
-              fetchLeads();
+              const currentDate = currentDateRef.current;
+              console.log('SSE обновление - получено обновление для даты:', currentDate);
+              fetchLeads(false, currentDate);
             } else if (data.type === 'payment_status_updated') {
               console.log('Получено SSE обновление статуса оплаты:', data.data);
               // НЕ вызываем fetchLeads(), чтобы не сбросить локальные изменения
@@ -588,24 +622,34 @@ export default function LogisticsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, leads.length]);
 
-  const fetchLeads = async (showRefreshing = false) => {
+  const fetchLeads = async (showRefreshing = false, dateOverride?: string) => {
     if (showRefreshing) {
       setRefreshing(true);
     }
     
     try {
+      // Используем переданную дату или текущую selectedDate
+      const dateToUse = dateOverride || selectedDate;
+      console.log('fetchLeads - Используем дату:', dateToUse);
+      
       // Добавляем дату в запрос
-      const response = await fetch(`/api/leads?date=${selectedDate}`);
+      const response = await fetch(`/api/leads?date=${dateToUse}`);
       const data = await response.json();
       
-      if (Array.isArray(data)) {
-        console.log('Компонент: Получено заявок:', data.length);
-        console.log('Компонент: Пример заявки:', data[0]);
-        console.log('Компонент: Поле dotavleno в примере:', data[0]?.dotavleno);
-        setLeads(data);
-        setLastUpdate(new Date());
+      if (response.ok) {
+        if (Array.isArray(data)) {
+          console.log('fetchLeads - Получено заявок:', data.length, 'для даты:', dateToUse);
+          console.log('fetchLeads - Пример заявки:', data[0]);
+          console.log('fetchLeads - Поле dotavleno в примере:', data[0]?.dotavleno);
+          setLeads(data);
+          setLastUpdate(new Date());
+        } else {
+          console.error('fetchLeads - API вернул не массив:', data);
+          setLeads([]);
+        }
       } else {
-        console.error('API вернул не массив:', data);
+        console.error('fetchLeads - Ошибка API:', response.status, response.statusText);
+        console.error('fetchLeads - Данные ошибки:', data);
         setLeads([]);
       }
     } catch (error) {
