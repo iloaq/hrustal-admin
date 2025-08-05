@@ -21,6 +21,13 @@ export async function POST(request: Request) {
         },
         ...(time !== 'all' && { delivery_time: time })
       },
+      include: {
+        truck_assignments: {
+          where: {
+            status: 'active'
+          }
+        }
+      },
       orderBy: {
         created_at: 'desc'
       }
@@ -33,7 +40,11 @@ export async function POST(request: Request) {
     const regionGroups: {[key: string]: any[]} = {};
     leads.forEach((lead: any) => {
       // Пропускаем заявки, у которых уже назначена машина
-      if (lead.assigned_truck) return;
+      const hasActiveAssignment = lead.truck_assignments.length > 0 && 
+        lead.truck_assignments[0].truck_name && 
+        lead.truck_assignments[0].truck_name.trim() !== '';
+      if (hasActiveAssignment) return;
+      
       const info = lead.info as any;
       const region = info?.region || 'Неизвестный регион';
       if (!regionGroups[region]) {
@@ -66,7 +77,11 @@ export async function POST(request: Request) {
       });
 
       if (existingAssignment) {
-        // Обновляем существующее
+        // НЕ обновляем существующее назначение, если машина уже назначена
+        if (existingAssignment.truck_name && existingAssignment.truck_name.trim() !== '') {
+          return existingAssignment;
+        }
+        // Обновляем только если назначение пустое
         return prisma.truckAssignment.update({
           where: { id: existingAssignment.id },
           data: {

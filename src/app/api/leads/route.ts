@@ -45,6 +45,7 @@ async function createAssignmentForLead(lead: any) {
       }
     });
     
+    // ВАЖНО: Если машина уже назначена, НЕ ИЗМЕНЯЕМ её
     if (existingAssignment && existingAssignment.truck_name && existingAssignment.truck_name.trim() !== '') {
       return existingAssignment;
     }
@@ -287,16 +288,19 @@ export async function PATCH(request: Request) {
       );
     }
     
+    console.log('PATCH /api/leads - Попытка обновления заявки:', { leadId, stat_oplata });
+    
     // Обновляем статус оплаты заявки
     const updatedLead = await prisma.lead.update({
       where: { lead_id: BigInt(leadId) },
-      data: { stat_oplata: stat_oplata } as any
+      data: { stat_oplata: stat_oplata }
     });
     
     console.log('PATCH /api/leads - Заявка обновлена в БД:', { 
       leadId, 
       stat_oplata, 
-      updatedLeadId: Number(updatedLead.lead_id) 
+      updatedLeadId: Number(updatedLead.lead_id),
+      updatedStatOplata: updatedLead.stat_oplata
     });
     
     // Отправляем уведомление через SSE
@@ -326,13 +330,20 @@ export async function PATCH(request: Request) {
       message: 'Статус оплаты обновлен',
       lead: {
         ...updatedLead,
-        lead_id: Number(updatedLead.lead_id)
+        lead_id: Number(updatedLead.lead_id),
+        status_id: updatedLead.status_id ? Number(updatedLead.status_id) : null,
+        responsible_user_id: updatedLead.responsible_user_id ? Number(updatedLead.responsible_user_id) : null,
+        total_liters: updatedLead.total_liters ? Number(updatedLead.total_liters) : null
       }
     });
   } catch (error) {
-    console.error('Error updating payment status:', error);
+    console.error('PATCH /api/leads - Детальная ошибка:', error);
+    console.error('PATCH /api/leads - Стек ошибки:', error instanceof Error ? error.stack : 'Нет стека');
+    console.error('PATCH /api/leads - Тип ошибки:', typeof error);
+    console.error('PATCH /api/leads - Сообщение ошибки:', error instanceof Error ? error.message : 'Нет сообщения');
+    
     return NextResponse.json(
-      { error: 'Failed to update payment status' },
+      { error: 'Failed to update payment status', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
