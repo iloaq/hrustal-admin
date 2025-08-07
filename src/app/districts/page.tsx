@@ -276,7 +276,7 @@ export default function DistrictsPage() {
         
         {districts.length === 0 && (
           <div className="px-6 py-8 text-center text-gray-500">
-            Районы не найдены. Нажмите "Синхронизировать с CRM" для загрузки данных.
+            Районы не найдены. Нажмите &quot;Синхронизировать с CRM&quot; для загрузки данных.
           </div>
         )}
       </div>

@@ -67,6 +67,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('POST /api/driver-auth - Создаем токен для водителя:', driver.id.toString());
+    
     // Создание JWT токенов
     const accessToken = jwt.sign(
       {
@@ -77,6 +79,8 @@ export async function POST(request: NextRequest) {
       JWT_SECRET,
       { expiresIn: '24h' }
     );
+    
+    console.log('POST /api/driver-auth - Токен создан, первые 20 символов:', accessToken.substring(0, 20) + '...');
 
     const refreshToken = jwt.sign(
       {

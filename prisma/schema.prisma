@@ -87,17 +87,23 @@ model ProductionOrder {
 }
 
 model TruckLoading {
-  id                 BigInt   @id @default(autoincrement())
-  loading_date       DateTime @db.Date
-  truck_name         String   @db.VarChar(100)
-  truck_area         String   @db.VarChar(100)
-  time_slot          String   @db.VarChar(50)
-  hrustalnaya_orders Int      @default(0)
-  malysh_orders      Int      @default(0)
-  selen_orders       Int      @default(0)
-  hrustalnaya_free   Int      @default(0)
-  malysh_free        Int      @default(0)
-  selen_free         Int      @default(0)
+  id                     BigInt   @id @default(autoincrement())
+  loading_date           DateTime @db.Date
+  truck_name             String   @db.VarChar(100)
+  truck_area             String   @db.VarChar(100)
+  time_slot              String   @db.VarChar(50)
+  hrustalnaya_orders_19l Int     @default(0)
+  hrustalnaya_orders_5l  Int     @default(0)
+  malysh_orders_19l      Int     @default(0)
+  malysh_orders_5l       Int     @default(0)
+  selen_orders_19l       Int     @default(0)
+  selen_orders_5l        Int     @default(0)
+  hrustalnaya_free_19l   Int     @default(0)
+  hrustalnaya_free_5l    Int     @default(0)
+  malysh_free_19l        Int     @default(0)
+  malysh_free_5l         Int     @default(0)
+  selen_free_19l         Int     @default(0)
+  selen_free_5l          Int     @default(0)
   notes              String?  @db.VarChar(500)
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
@@ -109,15 +115,19 @@ model TruckLoading {
 }
 
 model ProductionSession {
-  id                   BigInt   @id @default(autoincrement())
-  date                 DateTime @db.Date
-  time_slot            String   @db.VarChar(20)
-  hrustalnaya_produced Int      @default(0)
-  malysh_produced      Int      @default(0)
-  selen_produced       Int      @default(0)
-  bottles_19l_free     Int      @default(100)
-  created_at           DateTime @default(now())
-  updated_at           DateTime @updatedAt
+  id                     BigInt   @id @default(autoincrement())
+  date                   DateTime @db.Date
+  time_slot              String   @db.VarChar(20)
+  hrustalnaya_19l_produced Int    @default(0)
+  hrustalnaya_5l_produced  Int   @default(0)
+  malysh_19l_produced      Int   @default(0)
+  malysh_5l_produced       Int   @default(0)
+  selen_19l_produced       Int   @default(0)
+  selen_5l_produced        Int   @default(0)
+  bottles_19l_free       Int      @default(100)
+  bottles_5l_free        Int      @default(50)
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
 
   @@unique([date, time_slot])
   @@map("production_sessions")

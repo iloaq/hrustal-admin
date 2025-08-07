@@ -6,11 +6,13 @@ interface Courier {
   id: string;
   name: string;
   login: string;
+  is_active?: boolean;
 }
 
 interface District {
   id: string;
   name: string;
+  is_active?: boolean;
 }
 
 interface Vehicle {
@@ -66,9 +68,31 @@ export default function VehiclesPage() {
         districtsRes.json()
       ]);
 
-      setVehicles(vehiclesData);
-      setCouriers(couriersData.filter((c: Courier) => c.is_active !== false));
-      setDistricts(districtsData.filter((d: District) => d.is_active !== false));
+      // Проверяем, что vehiclesData является массивом
+      console.log('VehiclesPage - Получены данные от API:', vehiclesData);
+      if (Array.isArray(vehiclesData)) {
+        console.log('VehiclesPage - Устанавливаем массив машин:', vehiclesData.length);
+        setVehicles(vehiclesData);
+      } else {
+        console.error('VehiclesPage - API вернул не массив для vehicles:', vehiclesData);
+        setVehicles([]);
+      }
+
+      // Проверяем, что couriersData является массивом
+      if (Array.isArray(couriersData)) {
+        setCouriers(couriersData.filter((c: Courier) => c.is_active !== false));
+      } else {
+        console.error('API вернул не массив для couriers:', couriersData);
+        setCouriers([]);
+      }
+
+      // Проверяем, что districtsData является массивом
+      if (Array.isArray(districtsData)) {
+        setDistricts(districtsData.filter((d: District) => d.is_active !== false));
+      } else {
+        console.error('API вернул не массив для districts:', districtsData);
+        setDistricts([]);
+      }
     } catch (error) {
       console.error('Ошибка загрузки данных:', error);
     } finally {
@@ -348,7 +372,7 @@ export default function VehiclesPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {vehicles.map((vehicle) => (
+              {Array.isArray(vehicles) && vehicles.map((vehicle) => (
                 <tr key={vehicle.id} className={!vehicle.is_active ? 'opacity-50' : ''}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
@@ -415,7 +439,7 @@ export default function VehiclesPage() {
           </table>
         </div>
         
-        {vehicles.length === 0 && (
+        {(!Array.isArray(vehicles) || vehicles.length === 0) && (
           <div className="text-center py-8 text-gray-500">
             Машины не найдены
           </div>

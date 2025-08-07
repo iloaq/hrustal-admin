@@ -2311,7 +2311,13 @@ export default function LogisticsPage() {
                       })
                     : filteredLeads
                   ).map((lead) => (
-                    <tr key={lead.lead_id} className={`hover:bg-gray-50 ${lead.dotavleno ? 'border-l-4 border-l-green-500' : ''} ${lead.route_exported_at ? 'border-l-4 border-l-orange-400' : ''}`}>
+                    <tr key={lead.lead_id} className={`hover:bg-gray-50 ${
+                      lead.dotavleno 
+                        ? 'bg-green-50 border-l-4 border-l-green-500' 
+                        : lead.route_exported_at 
+                        ? 'bg-orange-50 border-l-4 border-l-orange-400' 
+                        : ''
+                    }`}>
                       <td className="px-2 sm:px-6 py-2 text-sm font-medium text-gray-900">
                             <div className="whitespace-nowrap">
                               <a 

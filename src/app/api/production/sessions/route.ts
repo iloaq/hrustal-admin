@@ -29,10 +29,14 @@ export async function GET(request: NextRequest) {
         data: {
           date: new Date(date),
           time_slot: timeSlot,
-          hrustalnaya_produced: 0,
-          malysh_produced: 0,
-          selen_produced: 0,
-          bottles_19l_free: 100
+          hrustalnaya_19l_produced: 0,
+          hrustalnaya_5l_produced: 0,
+          malysh_19l_produced: 0,
+          malysh_5l_produced: 0,
+          selen_19l_produced: 0,
+          selen_5l_produced: 0,
+          bottles_19l_free: 100,
+          bottles_5l_free: 50
         }
       });
       
@@ -62,7 +66,18 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { date, timeSlot, hrustalnaya_produced, malysh_produced, selen_produced, bottles_19l_free } = body;
+    const { 
+      date, 
+      timeSlot, 
+      hrustalnaya_19l_produced, 
+      hrustalnaya_5l_produced,
+      malysh_19l_produced, 
+      malysh_5l_produced,
+      selen_19l_produced, 
+      selen_5l_produced,
+      bottles_19l_free,
+      bottles_5l_free
+    } = body;
 
     if (!date || !timeSlot) {
       return NextResponse.json({ error: 'Date and timeSlot are required' }, { status: 400 });
@@ -76,18 +91,26 @@ export async function PUT(request: NextRequest) {
         }
       },
       update: {
-        hrustalnaya_produced: hrustalnaya_produced ?? 0,
-        malysh_produced: malysh_produced ?? 0,
-        selen_produced: selen_produced ?? 0,
-        bottles_19l_free: bottles_19l_free ?? 100
+        hrustalnaya_19l_produced: hrustalnaya_19l_produced ?? 0,
+        hrustalnaya_5l_produced: hrustalnaya_5l_produced ?? 0,
+        malysh_19l_produced: malysh_19l_produced ?? 0,
+        malysh_5l_produced: malysh_5l_produced ?? 0,
+        selen_19l_produced: selen_19l_produced ?? 0,
+        selen_5l_produced: selen_5l_produced ?? 0,
+        bottles_19l_free: bottles_19l_free ?? 100,
+        bottles_5l_free: bottles_5l_free ?? 50
       },
       create: {
         date: new Date(date),
         time_slot: timeSlot,
-        hrustalnaya_produced: hrustalnaya_produced ?? 0,
-        malysh_produced: malysh_produced ?? 0,
-        selen_produced: selen_produced ?? 0,
-        bottles_19l_free: bottles_19l_free ?? 100
+        hrustalnaya_19l_produced: hrustalnaya_19l_produced ?? 0,
+        hrustalnaya_5l_produced: hrustalnaya_5l_produced ?? 0,
+        malysh_19l_produced: malysh_19l_produced ?? 0,
+        malysh_5l_produced: malysh_5l_produced ?? 0,
+        selen_19l_produced: selen_19l_produced ?? 0,
+        selen_5l_produced: selen_5l_produced ?? 0,
+        bottles_19l_free: bottles_19l_free ?? 100,
+        bottles_5l_free: bottles_5l_free ?? 50
       }
     });
 

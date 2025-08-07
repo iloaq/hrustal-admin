@@ -3,122 +3,91 @@ import { PrismaClient } from '@/generated/prisma';
 
 const prisma = new PrismaClient();
 
-// GET /api/production/truck-loadings?date=2025-07-07&timeSlot=Утро
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
     const timeSlot = searchParams.get('timeSlot');
 
-    if (!date) {
-      return NextResponse.json({ error: 'Date is required' }, { status: 400 });
+    if (!date || !timeSlot) {
+      return NextResponse.json(
+        { error: 'Необходимо указать дату и время' },
+        { status: 400 }
+      );
     }
 
-    const whereClause: any = {
-      loading_date: new Date(date)
-    };
-
-    if (timeSlot) {
-      whereClause.time_slot = timeSlot;
-    }
-
+    // Получаем загрузки машин для указанной даты и времени
     const loadings = await prisma.truckLoading.findMany({
-      where: whereClause,
-      orderBy: [
-        { time_slot: 'asc' },
-        { truck_name: 'asc' }
-      ]
-    });
-
-    // Преобразуем BigInt в числа
-    const serializedLoadings = loadings.map((loading: any) => ({
-      ...loading,
-      id: Number(loading.id)
-    }));
-
-    return NextResponse.json(serializedLoadings);
-  } catch (error) {
-    console.error('Error fetching truck loadings:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-// PUT /api/production/truck-loadings
-export async function PUT(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { 
-      date, 
-      truckName, 
-      timeSlot, 
-      hrustalnaya_orders, 
-      malysh_orders, 
-      selen_orders,
-      hrustalnaya_free, 
-      malysh_free, 
-      selen_free 
-    } = body;
-
-    if (!date || !truckName || !timeSlot) {
-      return NextResponse.json({ error: 'Date, truckName and timeSlot are required' }, { status: 400 });
-    }
-
-    const loading = await prisma.truckLoading.upsert({
       where: {
-        loading_date_truck_name_time_slot: {
-          loading_date: new Date(date),
-          truck_name: truckName,
-          time_slot: timeSlot
-        }
-      },
-      update: {
-        hrustalnaya_orders: hrustalnaya_orders ?? 0,
-        malysh_orders: malysh_orders ?? 0,
-        selen_orders: selen_orders ?? 0,
-        hrustalnaya_free: hrustalnaya_free ?? 0,
-        malysh_free: malysh_free ?? 0,
-        selen_free: selen_free ?? 0,
-        truck_area: 'Склад' // Дефолтное значение
-      },
-      create: {
         loading_date: new Date(date),
-        truck_name: truckName,
-        time_slot: timeSlot,
-        truck_area: 'Склад',
-        hrustalnaya_orders: hrustalnaya_orders ?? 0,
-        malysh_orders: malysh_orders ?? 0,
-        selen_orders: selen_orders ?? 0,
-        hrustalnaya_free: hrustalnaya_free ?? 0,
-        malysh_free: malysh_free ?? 0,
-        selen_free: selen_free ?? 0
+        time_slot: timeSlot
       }
     });
 
-    // Преобразуем BigInt в число
-    const serializedLoading = {
-      ...loading,
-      id: Number(loading.id)
-    };
+    // Если нет данных, создаем базовые записи для всех машин
+    if (loadings.length === 0) {
+      const defaultLoadings = [
+        { truck_name: 'Машина 1', truck_area: 'Центр' },
+        { truck_name: 'Машина 2', truck_area: 'Вокзал' },
+        { truck_name: 'Машина 3', truck_area: 'Центр ПЗ' },
+        { truck_name: 'Машина 4', truck_area: 'Вокзал ПЗ' },
+        { truck_name: 'Машина 5', truck_area: 'Универсальная' }
+      ];
 
-    return NextResponse.json(serializedLoading);
+      const createdLoadings = [];
+      for (const truck of defaultLoadings) {
+        const loading = await prisma.truckLoading.create({
+          data: {
+            loading_date: new Date(date),
+            truck_name: truck.truck_name,
+            truck_area: truck.truck_area,
+            time_slot: timeSlot,
+            hrustalnaya_orders_19l: 0,
+            hrustalnaya_orders_5l: 0,
+            malysh_orders_19l: 0,
+            malysh_orders_5l: 0,
+            selen_orders_19l: 0,
+            selen_orders_5l: 0,
+            hrustalnaya_free_19l: 0,
+            hrustalnaya_free_5l: 0,
+            malysh_free_19l: 0,
+            malysh_free_5l: 0,
+            selen_free_19l: 0,
+            selen_free_5l: 0
+          }
+        });
+        createdLoadings.push(loading);
+      }
+
+      return NextResponse.json(createdLoadings);
+    }
+
+    return NextResponse.json(loadings);
   } catch (error) {
-    console.error('Error updating truck loading:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error fetching truck loadings:', error);
+    return NextResponse.json(
+      { error: 'Ошибка загрузки данных загрузки машин' },
+      { status: 500 }
+    );
   }
 }
 
-// POST /api/production/truck-loadings/bulk - для массового обновления заказов
-export async function POST(request: NextRequest) {
+export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { date, timeSlot, loadings } = body;
 
-    if (!date || !timeSlot || !Array.isArray(loadings)) {
-      return NextResponse.json({ error: 'Date, timeSlot and loadings array are required' }, { status: 400 });
+    if (!date || !timeSlot || !loadings) {
+      return NextResponse.json(
+        { error: 'Необходимо указать дату, время и данные загрузки' },
+        { status: 400 }
+      );
     }
 
-    const operations = loadings.map((loading: any) => 
-      prisma.truckLoading.upsert({
+    // Обновляем загрузки машин
+    const updatedLoadings = [];
+    for (const loading of loadings) {
+      const updatedLoading = await prisma.truckLoading.upsert({
         where: {
           loading_date_truck_name_time_slot: {
             loading_date: new Date(date),
@@ -127,39 +96,50 @@ export async function POST(request: NextRequest) {
           }
         },
         update: {
-          hrustalnaya_orders: loading.hrustalnaya_orders ?? 0,
-          malysh_orders: loading.malysh_orders ?? 0,
-          selen_orders: loading.selen_orders ?? 0,
-          hrustalnaya_free: loading.hrustalnaya_free ?? 0,
-          malysh_free: loading.malysh_free ?? 0,
-          selen_free: loading.selen_free ?? 0
+          hrustalnaya_orders_19l: loading.hrustalnaya_orders_19l || 0,
+          hrustalnaya_orders_5l: loading.hrustalnaya_orders_5l || 0,
+          malysh_orders_19l: loading.malysh_orders_19l || 0,
+          malysh_orders_5l: loading.malysh_orders_5l || 0,
+          selen_orders_19l: loading.selen_orders_19l || 0,
+          selen_orders_5l: loading.selen_orders_5l || 0,
+          hrustalnaya_free_19l: loading.hrustalnaya_free_19l || 0,
+          hrustalnaya_free_5l: loading.hrustalnaya_free_5l || 0,
+          malysh_free_19l: loading.malysh_free_19l || 0,
+          malysh_free_5l: loading.malysh_free_5l || 0,
+          selen_free_19l: loading.selen_free_19l || 0,
+          selen_free_5l: loading.selen_free_5l || 0
         },
         create: {
           loading_date: new Date(date),
           truck_name: loading.truck_name,
+          truck_area: loading.truck_area || 'Не указан',
           time_slot: timeSlot,
-          truck_area: 'Склад',
-          hrustalnaya_orders: loading.hrustalnaya_orders ?? 0,
-          malysh_orders: loading.malysh_orders ?? 0,
-          selen_orders: loading.selen_orders ?? 0,
-          hrustalnaya_free: loading.hrustalnaya_free ?? 0,
-          malysh_free: loading.malysh_free ?? 0,
-          selen_free: loading.selen_free ?? 0
+          hrustalnaya_orders_19l: loading.hrustalnaya_orders_19l || 0,
+          hrustalnaya_orders_5l: loading.hrustalnaya_orders_5l || 0,
+          malysh_orders_19l: loading.malysh_orders_19l || 0,
+          malysh_orders_5l: loading.malysh_orders_5l || 0,
+          selen_orders_19l: loading.selen_orders_19l || 0,
+          selen_orders_5l: loading.selen_orders_5l || 0,
+          hrustalnaya_free_19l: loading.hrustalnaya_free_19l || 0,
+          hrustalnaya_free_5l: loading.hrustalnaya_free_5l || 0,
+          malysh_free_19l: loading.malysh_free_19l || 0,
+          malysh_free_5l: loading.malysh_free_5l || 0,
+          selen_free_19l: loading.selen_free_19l || 0,
+          selen_free_5l: loading.selen_free_5l || 0
         }
-      })
-    );
+      });
+      updatedLoadings.push(updatedLoading);
+    }
 
-    const results = await Promise.all(operations);
-
-    // Преобразуем BigInt в числа
-    const serializedResults = results.map((loading: any) => ({
-      ...loading,
-      id: Number(loading.id)
-    }));
-
-    return NextResponse.json(serializedResults);
+    return NextResponse.json({
+      message: 'Загрузка машин успешно обновлена',
+      loadings: updatedLoadings
+    });
   } catch (error) {
-    console.error('Error bulk updating truck loadings:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error updating truck loadings:', error);
+    return NextResponse.json(
+      { error: 'Ошибка обновления загрузки машин' },
+      { status: 500 }
+    );
   }
 } 

@@ -6,6 +6,8 @@ const prisma = new PrismaClient();
 // GET - получить все машины
 export async function GET(request: NextRequest) {
   try {
+    console.log('GET /api/vehicles - Начало запроса');
+    
     const vehicles = await (prisma as any).vehicle.findMany({
       include: {
         couriers: {
@@ -24,6 +26,8 @@ export async function GET(request: NextRequest) {
       orderBy: { name: 'asc' }
     });
 
+    console.log('GET /api/vehicles - Получено машин из БД:', vehicles.length);
+    
     // Преобразуем BigInt в строки для JSON сериализации
     const serializedVehicles = vehicles.map((vehicle: any) => ({
       ...vehicle,
@@ -50,9 +54,10 @@ export async function GET(request: NextRequest) {
       }))
     }));
 
+    console.log('GET /api/vehicles - Возвращаем сериализованные данные:', serializedVehicles.length, 'машин');
     return NextResponse.json(serializedVehicles);
   } catch (error) {
-    console.error('Ошибка получения машин:', error);
+    console.error('GET /api/vehicles - Ошибка получения машин:', error);
     return NextResponse.json(
       { error: 'Ошибка получения машин' },
       { status: 500 }
