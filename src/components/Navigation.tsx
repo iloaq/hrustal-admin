@@ -74,8 +74,48 @@ export default function Navigation({ currentPage, onPageChange }: NavigationProp
                     >
                       Производство
                     </button>
+                                    <button
+                  onClick={() => onPageChange('settings')}
+                  className={`px-2 sm:px-3 py-1 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+                    currentPage === 'settings'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  ⚙️ Настройки
+                </button>
+                <button
+                  onClick={() => onPageChange('schedule')}
+                  className={`px-2 sm:px-3 py-1 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+                    currentPage === 'schedule'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  Расписание
+                </button>
                   </>
                 )}
+
+                {/* Рабочие интерфейсы */}
+                <div className="flex items-center space-x-1 border-l border-gray-200 pl-2 ml-2">
+                  <a
+                    href="/driver-work"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2 sm:px-3 py-1 sm:py-2 rounded-md text-xs sm:text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                  >
+                    🚗 Водители
+                  </a>
+                  <a
+                    href="/courier-work"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2 sm:px-3 py-1 sm:py-2 rounded-md text-xs sm:text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                  >
+                    👤 Курьеры
+                  </a>
+                </div>
               </div>
             </div>
           </div>

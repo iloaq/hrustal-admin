@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         
         try {
           // Проверяем, что контроллер не закрыт перед отправкой
-          if (controller.desiredSize !== null) {
+          if (controller.desiredSize !== null && controller.desiredSize > 0) {
             controller.enqueue(encoder.encode(pingMessage));
           } else {
             console.log('Контроллер закрыт, останавливаем ping');

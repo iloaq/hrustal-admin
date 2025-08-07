@@ -6,6 +6,8 @@ import PinAuth from '../components/PinAuth';
 import Navigation from '../components/Navigation';
 import LogisticsPage from './logistics/page';
 import ProductionPage from './production/page';
+import SettingsPage from './settings/page';
+import SchedulePage from './schedule/page';
 
 export default function HomePage() {
   const { user, loading, login } = useAuth();
@@ -49,6 +51,8 @@ export default function HomePage() {
       <main>
         {currentPage === 'logistics' && <LogisticsPage />}
         {currentPage === 'production' && <ProductionPage />}
+        {currentPage === 'settings' && <SettingsPage />}
+        {currentPage === 'schedule' && <SchedulePage />}
       </main>
     </div>
   );

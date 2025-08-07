@@ -32,6 +32,7 @@ model Lead {
   price                 String?           @db.VarChar(255)
   production_orders     ProductionOrder[]
   truck_assignments     TruckAssignment[]
+  driver_assignments    DriverAssignment[]
 
   @@map("leads")
 }
@@ -129,4 +130,254 @@ model truck_configs {
   regionGroups String
   created_at   DateTime @default(now())
   updated_at   DateTime
+}
+
+// Новые модели для системы курьеров и водителей
+
+model Vehicle {
+  id           BigInt              @id @default(autoincrement())
+  name         String              @unique @db.VarChar(100) // Название машины (Машина 1, Машина 2, etc.)
+  brand        String?             @db.VarChar(100) // Марка машины
+  license_plate String?            @db.VarChar(20) // Госномер
+  capacity     Int?                // Вместимость (опционально)
+  is_active    Boolean             @default(true)
+  created_at   DateTime            @default(now())
+  updated_at   DateTime            @updatedAt
+  
+  // Связи
+  drivers      DriverVehicle[]     // Много ко многим с водителями
+  couriers     CourierVehicle[]    // Много ко многим с курьерами
+  districts    VehicleDistrict[]   // Много ко многим с районами
+  driver_assignments DriverAssignment[] // Назначения на заявки
+  
+  // Расписания
+  district_schedule VehicleDistrictSchedule[] // Расписание машина-район по датам
+  courier_schedule  CourierVehicleSchedule[]  // Расписание курьер-машина по датам
+  
+  @@map("vehicles")
+}
+
+model Driver {
+  id           BigInt              @id @default(autoincrement())
+  name         String              @db.VarChar(100)
+  phone        String?             @db.VarChar(20)
+  login        String              @unique @db.VarChar(50) // Логин для системы водителей
+  pin_code     String              @db.VarChar(10) // Пин-код (4-6 цифр)
+  license_number String?           @db.VarChar(50) // Номер водительских прав
+  is_active    Boolean             @default(true)
+  created_at   DateTime            @default(now())
+  updated_at   DateTime            @updatedAt
+  
+  // Связи
+  vehicles     DriverVehicle[]     // Много ко многим с машинами
+  districts    DriverDistrict[]    // Много ко многим с районами
+  assignments  DriverAssignment[]  // Назначения водителя на заявки
+  
+  @@map("drivers")
+}
+
+model Courier {
+  id           BigInt              @id @default(autoincrement())
+  name         String              @db.VarChar(100)
+  phone        String?             @db.VarChar(20)
+  login        String              @unique @db.VarChar(50) // Логин для PWA
+  pin_code     String              @db.VarChar(10) // Пин-код (4-6 цифр)
+  is_active    Boolean             @default(true)
+  created_at   DateTime            @default(now())
+  updated_at   DateTime            @updatedAt
+  
+  // Связи
+  vehicles     CourierVehicle[]    // Много ко многим с машинами
+  districts    CourierDistrict[]   // Много ко многим с районами
+  tasks        CourierTask[]       // Задачи курьера
+  
+  // Расписания
+  vehicle_schedule CourierVehicleSchedule[] // Расписание курьер-машина по датам
+  
+  @@map("couriers")
+}
+
+model District {
+  id           BigInt              @id @default(autoincrement())
+  name         String              @unique @db.VarChar(100) // Название района
+  description  String?             @db.VarChar(500) // Описание зоны покрытия
+  is_active    Boolean             @default(true)
+  created_at   DateTime            @default(now())
+  updated_at   DateTime            @updatedAt
+  
+  // Связи
+  drivers      DriverDistrict[]    // Много ко многим с водителями
+  vehicles     VehicleDistrict[]   // Много ко многим с машинами
+  couriers     CourierDistrict[]   // Много ко многим с курьерами
+  
+  // Расписания
+  vehicle_schedule VehicleDistrictSchedule[] // Расписание машина-район по датам
+  
+  @@map("districts")
+}
+
+// Промежуточные таблицы для связей многие ко многим
+
+model DriverVehicle {
+  id         BigInt   @id @default(autoincrement())
+  driver_id  BigInt
+  vehicle_id BigInt
+  assigned_at DateTime @default(now())
+  is_active  Boolean  @default(true)
+  is_primary Boolean  @default(false) // Основная машина водителя
+  
+  driver     Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  vehicle    Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  
+  @@unique([driver_id, vehicle_id])
+  @@map("driver_vehicles")
+}
+
+model DriverDistrict {
+  id          BigInt   @id @default(autoincrement())
+  driver_id   BigInt
+  district_id BigInt
+  assigned_at DateTime @default(now())
+  is_active   Boolean  @default(true)
+  
+  driver      Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  district    District @relation(fields: [district_id], references: [id], onDelete: Cascade)
+  
+  @@unique([driver_id, district_id])
+  @@map("driver_districts")
+}
+
+model CourierVehicle {
+  id         BigInt   @id @default(autoincrement())
+  courier_id BigInt
+  vehicle_id BigInt
+  assigned_at DateTime @default(now())
+  is_active  Boolean  @default(true)
+  
+  courier    Courier  @relation(fields: [courier_id], references: [id], onDelete: Cascade)
+  vehicle    Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  
+  @@unique([courier_id, vehicle_id])
+  @@map("courier_vehicles")
+}
+
+model CourierDistrict {
+  id          BigInt   @id @default(autoincrement())
+  courier_id  BigInt
+  district_id BigInt
+  assigned_at DateTime @default(now())
+  is_active   Boolean  @default(true)
+  
+  courier     Courier  @relation(fields: [courier_id], references: [id], onDelete: Cascade)
+  district    District @relation(fields: [district_id], references: [id], onDelete: Cascade)
+  
+  @@unique([courier_id, district_id])
+  @@map("courier_districts")
+}
+
+model VehicleDistrict {
+  id          BigInt   @id @default(autoincrement())
+  vehicle_id  BigInt
+  district_id BigInt
+  assigned_at DateTime @default(now())
+  is_active   Boolean  @default(true)
+  
+  vehicle     Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  district    District @relation(fields: [district_id], references: [id], onDelete: Cascade)
+  
+  @@unique([vehicle_id, district_id])
+  @@map("vehicle_districts")
+}
+
+// Расписание назначений машин на районы по датам
+model VehicleDistrictSchedule {
+  id          BigInt   @id @default(autoincrement())
+  vehicle_id  BigInt
+  district_id BigInt
+  date        DateTime @db.Date
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  created_by  String?  @db.VarChar(100) // Кто назначил
+  notes       String?  @db.VarChar(500) // Заметки
+  
+  vehicle     Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  district    District @relation(fields: [district_id], references: [id], onDelete: Cascade)
+  
+  @@unique([vehicle_id, district_id, date])
+  @@index([date])
+  @@index([vehicle_id, date])
+  @@index([district_id, date])
+  @@map("vehicle_district_schedule")
+}
+
+// Расписание назначений курьеров на машины по датам
+model CourierVehicleSchedule {
+  id         BigInt   @id @default(autoincrement())
+  courier_id BigInt
+  vehicle_id BigInt
+  date       DateTime @db.Date
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  created_by String?  @db.VarChar(100) // Кто назначил
+  notes      String?  @db.VarChar(500) // Заметки
+  
+  courier    Courier  @relation(fields: [courier_id], references: [id], onDelete: Cascade)
+  vehicle    Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  
+  @@unique([courier_id, vehicle_id, date])
+  @@index([date])
+  @@index([courier_id, date])
+  @@index([vehicle_id, date])
+  @@map("courier_vehicle_schedule")
+}
+
+// Система задач для курьеров (опционально)
+
+model CourierTask {
+  id           BigInt    @id @default(autoincrement())
+  courier_id   BigInt
+  title        String    @db.VarChar(255)
+  description  String?   @db.VarChar(1000)
+  address      String?   @db.VarChar(500)
+  client_name  String?   @db.VarChar(100)
+  client_phone String?   @db.VarChar(20)
+  task_date    DateTime  @db.Date
+  status       String    @default("pending") @db.VarChar(50) // pending, in_progress, completed, cancelled
+  priority     String    @default("normal") @db.VarChar(50) // low, normal, high
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  completed_at DateTime?
+  notes        String?   @db.VarChar(1000)
+  
+  courier      Courier   @relation(fields: [courier_id], references: [id], onDelete: Cascade)
+  
+  @@index([courier_id, task_date])
+  @@map("courier_tasks")
+}
+
+// Система назначения заявок водителям
+
+model DriverAssignment {
+  id              BigInt    @id @default(autoincrement())
+  driver_id       BigInt
+  lead_id         BigInt
+  vehicle_id      BigInt?   // Машина, на которой выполняется заявка
+  delivery_date   DateTime  @db.Date
+  delivery_time   String?   @db.VarChar(50)
+  status          String    @default("assigned") @db.VarChar(50) // assigned, accepted, in_progress, completed, cancelled
+  accepted_at     DateTime?
+  started_at      DateTime?
+  completed_at    DateTime?
+  driver_notes    String?   @db.VarChar(1000) // Заметки водителя
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  
+  driver          Driver    @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  lead            Lead      @relation(fields: [lead_id], references: [lead_id], onDelete: Cascade)
+  vehicle         Vehicle?  @relation(fields: [vehicle_id], references: [id])
+  
+  @@unique([driver_id, lead_id, delivery_date])
+  @@index([driver_id, delivery_date])
+  @@index([lead_id])
+  @@map("driver_assignments")
 }
