@@ -1,0 +1,22 @@
+{
+    "widget": {
+      "title": "Адреса клиента",
+      "address_selector": "Выбор адреса", 
+      "add_address": "Добавить адрес",
+      "enter_address": "Введите адрес...",
+      "main": "Основной",
+      "remove": "Удалить",
+      "select_address": "Выберите адрес доставки",
+      "no_addresses": "Нет сохраненных адресов",
+      "max_reached": "Достигнут лимит адресов"
+    },
+    "settings": {
+      "api_url": "URL API для поиска адресов",
+      "max_addresses": "Максимальное количество адресов",
+      "search_delay": "Задержка поиска (мс)"
+    },
+    "error": {
+      "max_addresses_title": "Превышен лимит",
+      "max_addresses_text": "Максимальное количество адресов: %max%"
+    }
+  }

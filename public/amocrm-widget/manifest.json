@@ -1,0 +1,45 @@
+{
+  "manifest_version": 2,
+  "name": "widget.multiple_addresses",
+  "description": "Управление множественными адресами клиентов",
+  "short_description": "Виджет для хранения и управления до 20 адресов клиента",
+  "version": "1.0.0",
+  "interface_version": 2,
+  "init_once": false,
+  "locale": ["ru", "en"],
+  "installation": true,
+  "support": {
+    "link": "https://dashboard-hrustal.skybric.com",
+    "email": "support@skybric.com"
+  },
+  "scopes": ["crm"],
+  "rights": {
+    "contacts": ["view", "edit"],
+    "leads": ["view", "edit"],
+    "custom_fields": ["view", "edit"]
+  },
+  "settings": {
+    "api_url": {
+      "name": "settings.api_url",
+      "type": "text",
+      "required": true,
+      "default": "https://dashboard-hrustal.skybric.com/api/addresses/search"
+    },
+    "max_addresses": {
+      "name": "settings.max_addresses", 
+      "type": "number",
+      "required": false,
+      "default": 20
+    },
+    "search_delay": {
+      "name": "settings.search_delay",
+      "type": "number", 
+      "required": false,
+      "default": 300
+    }
+  },
+  "locations": [
+    "contacts-detail",
+    "leads-detail"
+  ]
+}

@@ -4,13 +4,20 @@
   // Конфигурация
   const CONFIG = {
     API_URL: 'https://dashboard-hrustal.skybric.com/api/addresses/search',
+    REDIRECT_URL: 'https://dashboard-hrustal.skybric.com/address-autocomplete.js', // URL для хука AMOCRM
+    WEBHOOK_URL: 'https://dashboard-hrustal.skybric.com/api/amocrm/webhook', // URL webhook для AMOCRM
     DEBOUNCE_DELAY: 300,
     MIN_QUERY_LENGTH: 2,
-    MAX_SUGGESTIONS: 10
+    MAX_SUGGESTIONS: 10,
+    ENABLED: true // Включен ли виджет
   };
 
   // Кэш для результатов поиска
   const cache = new Map();
+  
+  // Состояние виджета
+  let isEnabled = CONFIG.ENABLED;
+  let enhancedElements = new Set(); // Отслеживание улучшенных элементов
   
   // Debounce функция
   function debounce(func, wait) {
@@ -148,13 +155,53 @@
     suggestionsList.style.display = 'none';
   }
 
+  // Функции управления виджетом
+  function enableWidget() {
+    isEnabled = true;
+    console.log('✅ Виджет автодополнения адресов включен');
+    initAllAddressFields();
+  }
+
+  function disableWidget() {
+    isEnabled = false;
+    console.log('❌ Виджет автодополнения адресов отключен');
+    
+    // Восстанавливаем оригинальные поля
+    enhancedElements.forEach(originalElement => {
+      const container = originalElement.closest('.address-autocomplete-container');
+      if (container) {
+        originalElement.style.display = '';
+        container.parentNode.insertBefore(originalElement, container);
+        container.remove();
+      }
+    });
+    
+    enhancedElements.clear();
+    cache.clear();
+  }
+
+  function toggleWidget() {
+    if (isEnabled) {
+      disableWidget();
+    } else {
+      enableWidget();
+    }
+    return isEnabled;
+  }
+
   // Инициализация виджета
   function initAddressAutocomplete(targetElement, options = {}) {
+    if (!isEnabled) {
+      return null;
+    }
     const { container, input, suggestionsList } = createAutocompleteElement();
     
     // Заменяем целевой элемент
     targetElement.parentNode.insertBefore(container, targetElement);
     targetElement.style.display = 'none';
+    
+    // Добавляем в отслеживание
+    enhancedElements.add(targetElement);
     
     // Синхронизируем значения
     input.value = targetElement.value || '';
@@ -251,26 +298,52 @@
     };
   }
 
+  // Инициализация всех полей адресов
+  function initAllAddressFields() {
+    const addressFields = document.querySelectorAll('[data-address-autocomplete]');
+    addressFields.forEach(field => {
+      if (!field.closest('.address-autocomplete-container')) {
+        initAddressAutocomplete(field, {
+          onSelect: (address) => {
+            // Триггер события для AMOCRM
+            const event = new CustomEvent('addressSelected', { 
+              detail: { address, field } 
+            });
+            document.dispatchEvent(event);
+          }
+        });
+      }
+    });
+  }
+
+  // Настройки AMOCRM хука/webhook
+  function getAmocrmWebhookSettings() {
+    return {
+      redirectUrl: CONFIG.REDIRECT_URL,
+      webhookUrl: CONFIG.WEBHOOK_URL,
+      scope: 'read,write', // Права доступа AMOCRM
+      clientId: 'YOUR_CLIENT_ID', // Замените на реальный client_id
+      secretKey: 'YOUR_SECRET_KEY' // Замените на реальный secret_key
+    };
+  }
+
   // Экспорт в глобальную область
   window.AddressAutocomplete = {
     init: initAddressAutocomplete,
-    search: searchAddresses
+    search: searchAddresses,
+    enableWidget,
+    disableWidget,
+    toggleWidget,
+    isEnabled: () => isEnabled,
+    getAmocrmWebhookSettings,
+    CONFIG
   };
 
   // Автоматическая инициализация для полей с data-address-autocomplete
   document.addEventListener('DOMContentLoaded', () => {
-    const addressFields = document.querySelectorAll('[data-address-autocomplete]');
-    addressFields.forEach(field => {
-      initAddressAutocomplete(field, {
-        onSelect: (address) => {
-          // Триггер события для AMOCRM
-          const event = new CustomEvent('addressSelected', { 
-            detail: { address, field } 
-          });
-          document.dispatchEvent(event);
-        }
-      });
-    });
+    if (isEnabled) {
+      initAllAddressFields();
+    }
   });
 
 })(); 

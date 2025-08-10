@@ -1,0 +1,72 @@
+{# Шаблон для карточки сделки #}
+<div class="widget widget_{{ widget_code }}" id="widget_{{ widget_code }}">
+  <div class="widget-header">
+    <h3 class="widget-title">{{ title }}</h3>
+  </div>
+  
+  <div class="widget-content">
+    <div class="address-selection">
+      <label for="address_selector_{{ widget_code }}" class="address-label">
+        {{ select_address }}:
+      </label>
+      <select id="address_selector_{{ widget_code }}" class="address-selector">
+        <option value="">Загрузка адресов...</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<style>
+.widget_{{ widget_code }} {
+  border: 1px solid #e6e6e6;
+  border-radius: 6px;
+  margin: 15px 0;
+  background: #fff;
+}
+
+.widget_{{ widget_code }} .widget-header {
+  background: #f8f9fa;
+  padding: 12px 15px;
+  border-bottom: 1px solid #e6e6e6;
+  border-radius: 6px 6px 0 0;
+}
+
+.widget_{{ widget_code }} .widget-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.widget_{{ widget_code }} .widget-content {
+  padding: 15px;
+}
+
+.widget_{{ widget_code }} .address-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.widget_{{ widget_code }} .address-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+.widget_{{ widget_code }} .address-selector {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+  outline: none;
+}
+
+.widget_{{ widget_code }} .address-selector:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+</style>

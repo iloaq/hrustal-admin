@@ -1,0 +1,168 @@
+{# Шаблон для карточки контакта #}
+<div class="widget widget_{{ widget_code }}" id="widget_{{ widget_code }}">
+  <div class="widget-header">
+    <h3 class="widget-title">{{ title }}</h3>
+  </div>
+  
+  <div class="widget-content">
+    <div class="addresses-container">
+      <div class="addresses-list">
+        {# Список адресов будет добавлен динамически #}
+      </div>
+      
+      <div class="addresses-controls">
+        <button type="button" class="add-address-btn button-input_blue">
+          {{ add_address }}
+        </button>
+        <div class="addresses-info">
+          <small>Максимум {{ max_addresses }} адресов</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.widget_{{ widget_code }} {
+  border: 1px solid #e6e6e6;
+  border-radius: 6px;
+  margin: 15px 0;
+  background: #fff;
+}
+
+.widget_{{ widget_code }} .widget-header {
+  background: #f8f9fa;
+  padding: 12px 15px;
+  border-bottom: 1px solid #e6e6e6;
+  border-radius: 6px 6px 0 0;
+}
+
+.widget_{{ widget_code }} .widget-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.widget_{{ widget_code }} .widget-content {
+  padding: 15px;
+}
+
+.widget_{{ widget_code }} .address-item {
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid #e6e6e6;
+  border-radius: 4px;
+  background: #fafbfc;
+}
+
+.widget_{{ widget_code }} .address-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.widget_{{ widget_code }} .address-input-container {
+  flex: 1;
+  position: relative;
+}
+
+.widget_{{ widget_code }} .address-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+}
+
+.widget_{{ widget_code }} .address-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.widget_{{ widget_code }} .address-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.widget_{{ widget_code }} .suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.widget_{{ widget_code }} .suggestion-item:hover {
+  background-color: #f8f9fa;
+}
+
+.widget_{{ widget_code }} .suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.widget_{{ widget_code }} .main-address-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.widget_{{ widget_code }} .main-address-radio {
+  margin: 0;
+}
+
+.widget_{{ widget_code }} .remove-address-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.widget_{{ widget_code }} .remove-address-btn:hover {
+  background: #c82333;
+}
+
+.widget_{{ widget_code }} .addresses-controls {
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.widget_{{ widget_code }} .add-address-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.widget_{{ widget_code }} .add-address-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.widget_{{ widget_code }} .addresses-info {
+  color: #666;
+  font-size: 12px;
+}
+</style>

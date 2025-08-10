@@ -1,0 +1,22 @@
+{
+    "widget": {
+      "title": "Client Addresses",
+      "address_selector": "Address Selection",
+      "add_address": "Add Address", 
+      "enter_address": "Enter address...",
+      "main": "Main",
+      "remove": "Remove",
+      "select_address": "Select delivery address",
+      "no_addresses": "No saved addresses",
+      "max_reached": "Address limit reached"
+    },
+    "settings": {
+      "api_url": "API URL for address search",
+      "max_addresses": "Maximum number of addresses", 
+      "search_delay": "Search delay (ms)"
+    },
+    "error": {
+      "max_addresses_title": "Limit Exceeded",
+      "max_addresses_text": "Maximum number of addresses: %max%"
+    }
+  }

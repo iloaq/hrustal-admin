@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройки виджета "Множественные адреса"</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group small {
+            color: #666;
+            font-size: 12px;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 Настройки виджета "Множественные адреса"</h1>
+        
+        <form id="settingsForm">
+            <div class="form-group">
+                <label for="api_url">URL API для поиска адресов:</label>
+                <input type="url" id="api_url" name="api_url" required>
+                <small>Адрес API endpoint для автодополнения адресов</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="max_addresses">Максимальное количество адресов:</label>
+                <input type="number" id="max_addresses" name="max_addresses" min="1" max="50" value="20">
+                <small>Лимит адресов на одного клиента (рекомендуется: 20)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="search_delay">Задержка поиска (мс):</label>
+                <input type="number" id="search_delay" name="search_delay" min="100" max="2000" value="300">
+                <small>Время ожидания перед началом поиска (debounce)</small>
+            </div>
+            
+            <button type="submit" class="btn">💾 Сохранить настройки</button>
+        </form>
+        
+        <div id="message" style="display: none;"></div>
+    </div>
+    
+    <script>
+        // Получаем account_id из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const accountId = urlParams.get('account_id');
+        
+        // Загружаем текущие настройки
+        loadSettings();
+        
+        // Обработчик формы
+        document.getElementById('settingsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveSettings();
+        });
+        
+        async function loadSettings() {
+            try {
+                const response = await fetch(`settings.php?action=get&account_id=${accountId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('api_url').value = data.settings.api_url || '';
+                    document.getElementById('max_addresses').value = data.settings.max_addresses || 20;
+                    document.getElementById('search_delay').value = data.settings.search_delay || 300;
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки настроек:', error);
+            }
+        }
+        
+        async function saveSettings() {
+            const formData = new FormData(document.getElementById('settingsForm'));
+            formData.append('action', 'save');
+            formData.append('account_id', accountId);
+            
+            try {
+                const response = await fetch('settings.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                const messageDiv = document.getElementById('message');
+                
+                messageDiv.style.display = 'block';
+                messageDiv.className = data.success ? 'success' : 'error';
+                messageDiv.textContent = data.message;
+                
+                // Скрываем сообщение через 3 секунды
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Ошибка сохранения настроек:', error);
+                
+                const messageDiv = document.getElementById('message');
+                messageDiv.style.display = 'block';
+                messageDiv.className = 'error';
+                messageDiv.textContent = 'Ошибка сохранения настроек';
+            }
+        }
+    </script>
+</body>
+</html>

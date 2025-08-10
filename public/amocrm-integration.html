@@ -133,37 +133,61 @@
                 >
             </div>
             <p><small>Попробуйте ввести часть адреса, чтобы увидеть автодополнение в действии.</small></p>
+            
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+                <h4>Управление виджетом:</h4>
+                <button class="btn" onclick="toggleWidgetDemo()" id="toggle-widget-btn">Отключить виджет</button>
+                <button class="btn btn-secondary" onclick="checkWidgetStatus()">Проверить статус</button>
+                <button class="btn btn-secondary" onclick="showHookSettings()">Настройки хука</button>
+            </div>
         </div>
         
         <div class="section">
             <h2>🔧 Интеграция с AMOCRM</h2>
             
             <div class="highlight">
-                <strong>Шаг 1:</strong> Добавьте скрипт виджета в AMOCRM
+                <strong>Шаг 1:</strong> Настройте URL для хука/webhook AMOCRM
             </div>
             
             <div class="code-block">
-&lt;script src="https://your-domain.com/widgets/address-autocomplete.js"&gt;&lt;/script&gt;
+// В файле address-autocomplete.js измените:
+const CONFIG = {
+  API_URL: 'https://dashboard-hrustal.skybric.com/api/addresses/search',
+  REDIRECT_URL: 'https://dashboard-hrustal.skybric.com/address-autocomplete.js',
+  WEBHOOK_URL: 'https://dashboard-hrustal.skybric.com/api/amocrm/webhook',
+  // ...
+};
             </div>
             
             <div class="highlight">
-                <strong>Шаг 2:</strong> Добавьте атрибут к полю адреса в AMOCRM
+                <strong>Шаг 2:</strong> Настройте интеграцию в AMOCRM
+            </div>
+            
+            <div class="code-block">
+// Получите настройки для AMOCRM:
+const settings = window.AddressAutocomplete.getAmocrmWebhookSettings();
+console.log('Redirect URL для AMOCRM:', settings.redirectUrl);
+console.log('Webhook URL:', settings.webhookUrl);
+            </div>
+            
+            <div class="highlight">
+                <strong>Шаг 3:</strong> Добавьте скрипт в AMOCRM
+            </div>
+            
+            <div class="code-block">
+&lt;script src="https://dashboard-hrustal.skybric.com/address-autocomplete.js"&gt;&lt;/script&gt;
+            </div>
+            
+            <div class="highlight">
+                <strong>Шаг 4:</strong> Добавьте атрибут к полю адреса в AMOCRM
             </div>
             
             <div class="code-block">
 &lt;input type="text" name="delivery_address" data-address-autocomplete&gt;
             </div>
             
-            <div class="highlight">
-                <strong>Шаг 3:</strong> Настройте API URL в виджете
-            </div>
-            
-            <div class="code-block">
-// В файле address-autocomplete.js измените:
-const CONFIG = {
-  API_URL: 'https://your-domain.com/api/addresses/search',
-  // ...
-};
+            <div class="warning">
+                <strong>ВАЖНО:</strong> Обязательно укажите правильные REDIRECT_URL и WEBHOOK_URL в настройках интеграции AMOCRM!
             </div>
         </div>
         
@@ -223,6 +247,31 @@ const CONFIG = {
             </div>
         </div>
         
+        <div class="section">
+            <h2>🎛️ Управление виджетом</h2>
+            
+            <h3>Включение и отключение</h3>
+            <div class="code-block">
+// Отключить виджет
+window.AddressAutocomplete.disableWidget();
+
+// Включить виджет
+window.AddressAutocomplete.enableWidget();
+
+// Переключить состояние виджета
+const isEnabled = window.AddressAutocomplete.toggleWidget();
+console.log('Виджет включен:', isEnabled);
+
+// Проверить статус
+const status = window.AddressAutocomplete.isEnabled();
+console.log('Текущий статус:', status);
+            </div>
+            
+            <div class="success">
+                <strong>Полезно:</strong> При отключении виджет автоматически восстанавливает оригинальные поля адресов.
+            </div>
+        </div>
+
         <div class="section">
             <h2>🔍 Поиск адресов</h2>
             <p>Виджет ищет адреса в поле <code>info.delivery_address</code> таблицы <code>leads</code>. Поиск выполняется по частичному совпадению (ILIKE).</p>
@@ -322,6 +371,38 @@ if (cached) {
                 console.log('Выбран адрес:', event.detail.address);
             });
         });
+        
+        function toggleWidgetDemo() {
+            if (window.AddressAutocomplete) {
+                const isEnabled = window.AddressAutocomplete.toggleWidget();
+                const btn = document.getElementById('toggle-widget-btn');
+                btn.textContent = isEnabled ? 'Отключить виджет' : 'Включить виджет';
+                btn.className = isEnabled ? 'btn' : 'btn btn-secondary';
+                console.log('Статус виджета изменен:', isEnabled);
+            } else {
+                console.log('AddressAutocomplete не загружен');
+            }
+        }
+        
+        function checkWidgetStatus() {
+            if (window.AddressAutocomplete) {
+                const status = window.AddressAutocomplete.isEnabled();
+                alert(`Статус виджета: ${status ? 'Включен' : 'Отключен'}`);
+                console.log('Текущий статус виджета:', status);
+            } else {
+                alert('AddressAutocomplete не загружен');
+            }
+        }
+        
+        function showHookSettings() {
+            if (window.AddressAutocomplete) {
+                const settings = window.AddressAutocomplete.getAmocrmWebhookSettings();
+                console.log('Настройки AMOCRM хука:', settings);
+                alert(`Настройки AMOCRM хука:\n\nRedirect URL: ${settings.redirectUrl}\nWebhook URL: ${settings.webhookUrl}\nScope: ${settings.scope}\n\nПроверьте консоль для полных настроек.`);
+            } else {
+                alert('AddressAutocomplete не загружен');
+            }
+        }
     </script>
 </body>
 </html> 
