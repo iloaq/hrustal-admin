@@ -52,10 +52,15 @@ export async function GET(request: Request) {
       .filter((address: string, index: number, arr: string[]) => arr.indexOf(address) === index) // Убираем дубликаты
       .slice(0, limit);
 
+    // Добавляем ссылку для перенаправления/авторизации
+    const redirectUrl = process.env.AMOCRM_REDIRECT_URL || 'https://dashboard-hrustal.skybric.com/auth/amocrm';
+    
     const response = NextResponse.json({ 
       addresses,
       query,
-      total: addresses.length 
+      total: addresses.length,
+      redirect_url: redirectUrl,
+      auth_required: process.env.AMOCRM_AUTH_REQUIRED === 'true'
     });
     
     response.headers.set('Access-Control-Allow-Origin', '*');
