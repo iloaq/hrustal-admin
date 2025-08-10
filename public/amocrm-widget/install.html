@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Установка виджета amoCRM</title>
+</head>
+<body>
+    <div id="install-status">Инициализация установки...</div>
+    
+    <script>
+        // Получаем параметры из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+        
+        if (code) {
+            // Есть код авторизации - обрабатываем
+            document.getElementById('install-status').innerHTML = 'Получен код авторизации, обрабатываем...';
+            
+            // Здесь можно отправить код на сервер для обмена на токен
+            // Или перенаправить на страницу успеха
+            setTimeout(() => {
+                window.location.href = 'install-success.html';
+            }, 2000);
+            
+        } else if (error) {
+            // Есть ошибка
+            document.getElementById('install-status').innerHTML = 'Ошибка: ' + error;
+            setTimeout(() => {
+                window.location.href = 'install-error.html?error=' + encodeURIComponent(error);
+            }, 2000);
+            
+        } else {
+            // Первый запрос - перенаправляем на авторизацию amoCRM
+            document.getElementById('install-status').innerHTML = 'Перенаправление на авторизацию amoCRM...';
+            
+            const clientId = '2794d61e-85ea-41df-a4ed-ee2418b2fa31';
+            const redirectUri = 'https://dashboard-hrustal.skybric.com/amocrm-widget/install.html';
+            const amocrmDomain = 'amocrm.ru'; // Замени на свой поддомен
+            
+            const authUrl = `https://${amocrmDomain}/oauth/authorize?` + new URLSearchParams({
+                client_id: clientId,
+                mode: 'popup',
+                response_type: 'code',
+                redirect_uri: redirectUri,
+                state: Math.random().toString(36).substring(7)
+            });
+            
+            setTimeout(() => {
+                window.location.href = authUrl;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
