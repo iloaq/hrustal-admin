@@ -13,80 +13,74 @@ header('Access-Control-Allow-Headers: Content-Type');
 define('CLIENT_ID', '2794d61e-85ea-41df-a4ed-ee2418b2fa31');
 define('CLIENT_SECRET', 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6ImZmY2VhOTAxZGU5MWJjOWMzMGM0Y2RhMWJlODYzYjg4MDU1NzhmY2RjNzJiODJkOGE4YTk5OWI5NzE2ZjIxMGFlOTMxN2Q5N2M4YmIyNzEzIn0.eyJhdWQiOiIyNzk0ZDYxZS04NWVhLTQxZGYtYTRlZC1lZTI0MThiMmZhMzEiLCJqdGkiOiJmZmNlYTkwMWRlOTFiYzljMzBjNGNkYTFiZTg2M2I4ODA1NTc4ZmNkYzcyYjgyZDhhOGE5OTliOTcxNmYyMTBhZTkzMTdkOTdjOGJiMjcxMyIsImlhdCI6MTc1NDg2MDcyMCwibmJmIjoxNzU0ODYwNzIwLCJleHAiOjE4ODEyNzM2MDAsInN1YiI6IjEyNTYzNzEwIiwiZ3JhbnRfdHlwZSI6IiIsImFjY291bnRfaWQiOjMyNDU1Njk0LCJiYXNlX2RvbWFpbiI6ImFtb2NybS5ydSIsInZlcnNpb24iOjIsInNjb3BlcyI6WyJjcm0iLCJmaWxlcyIsImZpbGVzX2RlbGV0ZSIsIm5vdGlmaWNhdGlvbnMiLCJwdXNoX25vdGlmaWNhdGlvbnMiXSwidXNlcl9mbGFncyI6MCwiaGFzaF91dWlkIjoiMWY3NzczMDMtMGNkNy00Yzk1LThhZDItYWEyYjA4NzRiMzc0IiwiYXBpX2RvbWFpbiI6ImFwaS1iLmFtb2NybS5ydSJ9.ht0Z3huoaJ0H2UB2rbHbE6Nx-y7XmNdCeoXmJ5Jw6N2zPfMuOaBxL6Wp8RM4ZnIgIXTIHLlGg8gaWZuy1mu-W_jDdtCAv0_7IgNfK81ogNPWs5cfKnM1avXx4I6ve13uc3JNrfmujPJlYHafZsTlflYS3aPueiMWNfs_WOUeaNQTSU9fo9s1yD4F1s33D24iKh1yM97sL86c_yGI63ulT3qT9taQ09tlgepxV774ORkjr-JJYm-RJkYHKJxw0sou2XAPF7XNWM-k0h8J3meBiOuMCt9ekUay9F9k8llBOXgrSffbrncWHzGZ5ZqIRtrCJsprl4CafMQCH7qjL2VMZQ');
 define('REDIRECT_URI', 'https://dashboard-hrustal.skybric.com/amocrm-widget/install.php');
+define('AMOCRM_DOMAIN', 'dashboard-hrustal.skybric.com'); // Замени на свой поддомен
 
 // Логирование для отладки
 error_log('amoCRM Widget Install Request: ' . print_r($_REQUEST, true));
 
-try {
-    // Получаем параметры от amoCRM
-    $code = $_GET['code'] ?? null;
-    $referer = $_GET['referer'] ?? null;
-    $account_id = $_GET['account_id'] ?? null;
-    $platform = $_GET['platform'] ?? 'amocrm_ru';
+// Проверяем, есть ли код авторизации
+if (isset($_GET['code'])) {
+    // Получаем код авторизации
+    $code = $_GET['code'];
     
-    if (!$code) {
-        throw new Exception('Код авторизации не получен');
+    try {
+        // Обмениваем код на access token
+        $tokenData = exchangeCodeForToken($code);
+        
+        if ($tokenData && isset($tokenData['access_token'])) {
+            // Сохраняем токен (в реальном проекте - в базу данных)
+            saveToken($tokenData);
+            
+            // Перенаправляем на страницу успешной установки
+            $successUrl = 'https://dashboard-hrustal.skybric.com/amocrm-widget/install-success.html';
+            header("Location: $successUrl");
+            exit;
+        } else {
+            throw new Exception('Не удалось получить access token');
+        }
+        
+    } catch (Exception $e) {
+        error_log('amoCRM OAuth Error: ' . $e->getMessage());
+        $errorUrl = 'https://dashboard-hrustal.skybric.com/amocrm-widget/install-error.html?error=' . urlencode($e->getMessage());
+        header("Location: $errorUrl");
+        exit;
     }
     
-    // Определяем домен amoCRM
-    $domain = ($platform === 'amocrm_com') ? 'amocrm.com' : 'amocrm.ru';
-    $subdomain = str_replace(['https://', '.amocrm.ru', '.amocrm.com'], '', $referer);
+} elseif (isset($_GET['error'])) {
+    // Обработка ошибки авторизации
+    $error = $_GET['error'];
+    $errorUrl = 'https://dashboard-hrustal.skybric.com/amocrm-widget/install-error.html?error=' . urlencode($error);
+    header("Location: $errorUrl");
+    exit;
     
-    // Обмениваем код на токен
-    $tokenData = exchangeCodeForToken($code, $domain);
-    
-    if (!$tokenData) {
-        throw new Exception('Не удалось получить токен доступа');
-    }
-    
-    // Сохраняем данные интеграции
-    $integrationData = [
-        'account_id' => $account_id,
-        'subdomain' => $subdomain,
-        'domain' => $domain,
-        'access_token' => $tokenData['access_token'],
-        'refresh_token' => $tokenData['refresh_token'],
-        'expires_in' => $tokenData['expires_in'],
-        'token_type' => $tokenData['token_type'],
-        'created_at' => time(),
-        'widget_settings' => [
-            'api_url' => 'https://dashboard-hrustal.skybric.com/api/addresses/search',
-            'max_addresses' => 20,
-            'search_delay' => 300
-        ]
-    ];
-    
-    // Сохраняем в файл или базу данных
-    saveIntegrationData($account_id, $integrationData);
-    
-    // Создаем кастомные поля в amoCRM
-    createCustomFields($tokenData['access_token'], $subdomain, $domain);
-    
-    // Успешная установка
-    echo json_encode([
-        'success' => true,
-        'message' => 'Виджет успешно установлен',
-        'account_id' => $account_id,
-        'settings_url' => "https://dashboard-hrustal.skybric.com/amocrm-widget/settings.php?account_id={$account_id}"
-    ]);
-    
-} catch (Exception $e) {
-    error_log('amoCRM Widget Install Error: ' . $e->getMessage());
-    
-    http_response_code(400);
-    echo json_encode([
-        'success' => false,
-        'error' => $e->getMessage()
-    ]);
+} else {
+    // Первый запрос - перенаправляем на авторизацию amoCRM
+    redirectToAmoCRMAuth();
 }
 
 /**
- * Обмен кода на токен доступа
+ * Перенаправление на авторизацию amoCRM
  */
-function exchangeCodeForToken($code, $domain) {
-    $url = "https://{$domain}/oauth2/access_token";
+function redirectToAmoCRMAuth() {
+    $authUrl = 'https://' . AMOCRM_DOMAIN . '/oauth/authorize?' . http_build_query([
+        'client_id' => CLIENT_ID,
+        'mode' => 'popup',
+        'response_type' => 'code',
+        'redirect_uri' => REDIRECT_URI,
+        'state' => generateState()
+    ]);
     
-    $data = [
+    header("Location: $authUrl");
+    exit;
+}
+
+/**
+ * Обмен кода авторизации на access token
+ */
+function exchangeCodeForToken($code) {
+    $tokenUrl = 'https://' . AMOCRM_DOMAIN . '/oauth/token';
+    
+    $postData = [
         'client_id' => CLIENT_ID,
         'client_secret' => CLIENT_SECRET,
         'grant_type' => 'authorization_code',
@@ -95,101 +89,44 @@ function exchangeCodeForToken($code, $domain) {
     ];
     
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_URL, $tokenUrl);
     curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/json'
+        'Content-Type: application/x-www-form-urlencoded'
     ]);
     
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     
-    if ($httpCode !== 200) {
-        error_log("Token exchange failed: HTTP {$httpCode}, Response: {$response}");
+    if ($httpCode === 200) {
+        return json_decode($response, true);
+    } else {
+        error_log('amoCRM Token Exchange Error: HTTP ' . $httpCode . ' - ' . $response);
         return false;
     }
-    
-    return json_decode($response, true);
 }
 
 /**
- * Создание кастомных полей в amoCRM
+ * Сохранение токена (заглушка - замени на реальное сохранение)
  */
-function createCustomFields($accessToken, $subdomain, $domain) {
-    $baseUrl = "https://{$subdomain}.{$domain}/api/v4";
+function saveToken($tokenData) {
+    // В реальном проекте сохраняй в базу данных
+    // Здесь просто логируем для примера
+    error_log('amoCRM Token Saved: ' . print_r($tokenData, true));
     
-    // Поля для контактов
-    $contactFields = [
-        [
-            'name' => 'Список адресов',
-            'code' => 'addresses_list', 
-            'type' => 'textarea',
-            'sort' => 500
-        ],
-        [
-            'name' => 'Основной адрес',
-            'code' => 'main_address',
-            'type' => 'text', 
-            'sort' => 501
-        ]
-    ];
-    
-    // Поля для сделок
-    $leadFields = [
-        [
-            'name' => 'Выбранный адрес',
-            'code' => 'selected_address',
-            'type' => 'text',
-            'sort' => 500
-        ]
-    ];
-    
-    // Создаем поля для контактов
-    createFields($accessToken, $baseUrl, 'contacts', $contactFields);
-    
-    // Создаем поля для сделок
-    createFields($accessToken, $baseUrl, 'leads', $leadFields);
+    // Можно сохранить в файл для тестирования
+    $tokenFile = __DIR__ . '/token.json';
+    file_put_contents($tokenFile, json_encode($tokenData, JSON_PRETTY_PRINT));
 }
 
 /**
- * Создание полей через API
+ * Генерация state параметра для безопасности
  */
-function createFields($accessToken, $baseUrl, $entityType, $fields) {
-    $url = "{$baseUrl}/{$entityType}/custom_fields";
-    
-    foreach ($fields as $field) {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($field));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $accessToken,
-            'Content-Type: application/json'
-        ]);
-        
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        error_log("Create field {$field['code']}: HTTP {$httpCode}, Response: {$response}");
-    }
+function generateState() {
+    return bin2hex(random_bytes(16));
 }
-
-/**
- * Сохранение данных интеграции
- */
-function saveIntegrationData($accountId, $data) {
-    $filePath = __DIR__ . "/data/integration_{$accountId}.json";
-    
-    // Создаем директорию если не существует
-    $dir = dirname($filePath);
-    if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
-    }
-    
-    file_put_contents($filePath, json_encode($data, JSON_PRETTY_PRINT));
-}
+?>
