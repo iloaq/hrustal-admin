@@ -53,6 +53,55 @@ async function createAssignmentForLead(lead: any) {
     // Нормализуем название района
     const normalizedRegion = region.toLowerCase().trim();
     
+    // Проверяем, если в поле района указано название машины
+    if (normalizedRegion.includes('машина')) {
+      // Если указано "Машина 6", "Машина 5" и т.д., используем как есть
+      if (normalizedRegion.includes('машина 6')) {
+        return await prisma.truckAssignment.upsert({
+          where: {
+            lead_id_delivery_date: {
+              lead_id: BigInt(lead.lead_id),
+              delivery_date: lead.delivery_date || new Date()
+            }
+          },
+          update: {
+            truck_name: 'Машина 6',
+            delivery_time: lead.delivery_time || '',
+            status: 'active'
+          },
+          create: {
+            lead_id: BigInt(lead.lead_id),
+            truck_name: 'Машина 6',
+            delivery_date: lead.delivery_date || new Date(),
+            delivery_time: lead.delivery_time || '',
+            status: 'active'
+          }
+        });
+      }
+      if (normalizedRegion.includes('машина 5')) {
+        return await prisma.truckAssignment.upsert({
+          where: {
+            lead_id_delivery_date: {
+              lead_id: BigInt(lead.lead_id),
+              delivery_date: lead.delivery_date || new Date()
+            }
+          },
+          update: {
+            truck_name: 'Машина 5',
+            delivery_time: lead.delivery_time || '',
+            status: 'active'
+          },
+          create: {
+            lead_id: BigInt(lead.lead_id),
+            truck_name: 'Машина 5',
+            delivery_date: lead.delivery_date || new Date(),
+            delivery_time: lead.delivery_time || '',
+            status: 'active'
+          }
+        });
+      }
+    }
+    
     // Логика распределения машин по районам
     const truckAssignments: {[key: string]: string} = {
       'центр': 'Машина 1',
@@ -74,7 +123,6 @@ async function createAssignmentForLead(lead: any) {
       'вокзал пз/п/з': 'Машина 4',
       'вокзальный пз': 'Машина 4',
       'вокзальный п/з': 'Машина 4',
-      'машина 5': 'Машина 5',
     };
     
     let assignedTruck = truckAssignments[normalizedRegion];
@@ -88,8 +136,9 @@ async function createAssignmentForLead(lead: any) {
       }
     }
     
+    // Если район не найден, назначаем на универсальную Машину 5
     if (!assignedTruck) {
-      assignedTruck = '';
+      assignedTruck = 'Машина 5';
     }
     
     // Создаем назначение в БД
@@ -103,7 +152,6 @@ async function createAssignmentForLead(lead: any) {
       update: {
         truck_name: assignedTruck,
         delivery_time: lead.delivery_time || '',
-        assigned_at: new Date(),
         status: 'active'
       },
       create: {
@@ -111,7 +159,6 @@ async function createAssignmentForLead(lead: any) {
         truck_name: assignedTruck,
         delivery_date: lead.delivery_date || new Date(),
         delivery_time: lead.delivery_time || '',
-        assigned_at: new Date(),
         status: 'active'
       }
     });
@@ -284,31 +331,70 @@ export async function PUT(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const { leadId, stat_oplata } = await request.json();
+    const body = await request.json();
+    const { leadId, stat_oplata, region, assigned_truck } = body;
     
-    console.log('PATCH /api/leads - Получены данные:', { leadId, stat_oplata });
+    console.log('PATCH /api/leads - Получены данные:', body);
     
-    if (!leadId || stat_oplata === undefined) {
-      console.log('PATCH /api/leads - Ошибка: отсутствуют обязательные поля');
+    if (!leadId) {
+      console.log('PATCH /api/leads - Ошибка: отсутствует leadId');
       return NextResponse.json(
-        { error: 'leadId and stat_oplata are required' },
+        { error: 'leadId is required' },
         { status: 400 }
       );
     }
     
-    console.log('PATCH /api/leads - Попытка обновления заявки:', { leadId, stat_oplata });
+    // Подготавливаем данные для обновления
+    const updateData: any = {};
     
-    // Обновляем статус оплаты заявки
+    if (stat_oplata !== undefined) {
+      updateData.stat_oplata = stat_oplata;
+    }
+    
+    // Если обновляется район, обновляем info.region
+    if (region !== undefined) {
+      updateData.info = {
+        ...updateData.info,
+        region: region
+      };
+    }
+    
+    console.log('PATCH /api/leads - Попытка обновления заявки:', { leadId, updateData });
+    
+    // Обновляем заявку
     const updatedLead = await prisma.lead.update({
       where: { lead_id: BigInt(leadId) },
-      data: { stat_oplata: stat_oplata }
+      data: updateData
     });
+    
+    // Если обновляется машина, обновляем truck_assignment
+    if (assigned_truck !== undefined) {
+      // Удаляем старые назначения
+      await prisma.truckAssignment.deleteMany({
+        where: {
+          lead_id: BigInt(leadId),
+          status: 'active'
+        }
+      });
+      
+      // Создаем новое назначение
+      if (assigned_truck && assigned_truck.trim() !== '') {
+        await prisma.truckAssignment.create({
+          data: {
+            lead_id: BigInt(leadId),
+            truck_name: assigned_truck,
+            delivery_date: updatedLead.delivery_date || new Date(),
+            delivery_time: updatedLead.delivery_time || '',
+            status: 'active'
+          }
+        });
+      }
+    }
     
     console.log('PATCH /api/leads - Заявка обновлена в БД:', { 
       leadId, 
-      stat_oplata, 
-      updatedLeadId: Number(updatedLead.lead_id),
-      updatedStatOplata: updatedLead.stat_oplata
+      updateData,
+      updatedLeadId: Number(updatedLead.lead_id)
     });
     
     // Отправляем уведомление через SSE
@@ -322,20 +408,20 @@ export async function PATCH(request: Request) {
         body: JSON.stringify({
           date: today,
           data: {
-            type: 'payment_status_updated',
+            type: 'lead_updated',
             leadId: leadId,
-            stat_oplata: stat_oplata
+            updates: updateData
           }
         })
       });
       console.log('PATCH /api/leads - SSE уведомление отправлено');
     } catch (broadcastError) {
-      console.error('Error broadcasting payment update:', broadcastError);
+      console.error('Error broadcasting update:', broadcastError);
     }
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Статус оплаты обновлен',
+      message: 'Заявка обновлена',
       lead: {
         ...updatedLead,
         lead_id: Number(updatedLead.lead_id),
@@ -351,7 +437,7 @@ export async function PATCH(request: Request) {
     console.error('PATCH /api/leads - Сообщение ошибки:', error instanceof Error ? error.message : 'Нет сообщения');
     
     return NextResponse.json(
-      { error: 'Failed to update payment status', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to update lead', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
