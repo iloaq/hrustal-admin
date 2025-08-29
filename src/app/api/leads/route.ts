@@ -271,7 +271,19 @@ export async function GET(request: Request) {
     const serializedLeads = serializeLeads(leads);
     console.log(`GET /api/leads - Сериализовано ${serializedLeads.length} заявок`);
     console.log('GET /api/leads - Пример заявки:', serializedLeads[0]);
-    return NextResponse.json(serializedLeads);
+
+    // Явно формируем стабильный HTTP/2-совместимый ответ без чанков
+    const body = JSON.stringify(serializedLeads);
+    const byteLength = new TextEncoder().encode(body).length;
+
+    return new Response(body, {
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store',
+        'Content-Length': String(byteLength),
+        'Content-Encoding': 'identity'
+      }
+    });
   } catch (error) {
     console.error('GET /api/leads - Ошибка:', error);
     console.error('GET /api/leads - Стек ошибки:', error instanceof Error ? error.stack : 'Нет стека');
