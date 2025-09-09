@@ -120,6 +120,21 @@ const createLeadsTableHTML = (
             const price = parseFloat(product.price || '0');
             return sum + (quantity * price);
           }, 0)) as number;
+      
+      // Отладочная информация для цены
+      console.log(`Заявка ${lead.lead_id}:`, {
+        leadPrice: lead.price,
+        leadPriceType: typeof lead.price,
+        calculatedSum: leadSum,
+        usingLeadPrice: lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price)),
+        products: Object.values(lead.products || {}).map((p: any) => ({
+          name: p.name,
+          quantity: p.quantity,
+          price: p.price,
+          total: (parseInt(p.quantity) || 0) * (parseFloat(p.price) || 0)
+        }))
+      });
+      
       stats.totalSum += leadSum;
       
       const products = Object.values(lead.products || {});
@@ -1010,14 +1025,22 @@ export default function LogisticsPage() {
         delivery_time: lead.delivery_time,
         payment_status: isPaid ? 1 : 0,
         payment_method: getPaymentMethod(lead),
-        total_amount: lead.price || '0',
+        total_amount: lead.price ? String(lead.price) : '0',
         products: lead.products || {},
         assigned_truck: lead.assigned_truck || '',
         comment: lead.comment || '',
         updated_at: new Date().toISOString()
       };
       
-      console.log('handlePaymentStatusChange - Отправка на webhook:', webhookData);
+      console.log('handlePaymentStatusChange - Отправка на webhook:', {
+        ...webhookData,
+        price_debug: {
+          originalPrice: lead.price,
+          originalPriceType: typeof lead.price,
+          webhookAmount: webhookData.total_amount,
+          webhookAmountType: typeof webhookData.total_amount
+        }
+      });
       
       // Отправляем webhook без await, чтобы не блокировать интерфейс
       fetch('https://n8n.capaadmin.skybric.com/webhook/9fa41a9a-43d6-4f4f-a219-efbc466d601c', {
