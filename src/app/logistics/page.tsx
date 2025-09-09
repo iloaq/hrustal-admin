@@ -125,6 +125,8 @@ const createLeadsTableHTML = (
       console.log(`Заявка ${lead.lead_id}:`, {
         leadPrice: lead.price,
         leadPriceType: typeof lead.price,
+        leadPriceNumber: Number(lead.price),
+        leadPriceIsValid: lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price)),
         calculatedSum: leadSum,
         usingLeadPrice: lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price)),
         products: Object.values(lead.products || {}).map((p: any) => ({
@@ -501,10 +503,6 @@ export default function LogisticsPage() {
     // Показываем загрузку при смене даты, но НЕ очищаем данные
     setLoading(true);
     // setLeads([]); // Убираем очистку - показываем старые данные до загрузки новых
-    
-    // Показываем загрузку при смене даты
-    setLoading(true);
-    setLeads([]); // Очищаем старые данные
     
     // Временно отключаем автообновление при смене даты
     setIsEditing(true);
