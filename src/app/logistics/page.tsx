@@ -528,7 +528,7 @@ export default function LogisticsPage() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Уменьшаем интервал автообновления с 10 до 3 секунд
+  // Увеличиваем интервал автообновления до 30 секунд (SSE обновляет быстрее)
   useEffect(() => {
     console.log('Создаем интервал автообновления, isEditing:', isEditing, 'selectedDate:', selectedDate, 'ref.current:', currentDateRef.current);
     
@@ -540,7 +540,7 @@ export default function LogisticsPage() {
       } else {
         console.log('Автообновление пропущено - идет редактирование, isEditing:', isEditing);
       }
-    }, 3000); // Уменьшаем с 10 до 3 секунд
+    }, 30000); // Увеличиваем до 30 секунд (SSE обновляет быстрее)
 
     return () => {
       console.log('Очищаем интервал автообновления');
@@ -548,70 +548,7 @@ export default function LogisticsPage() {
     };
   }, [isEditing]); // Убираем selectedDate из зависимостей, используем ref
 
-  // Server-Sent Events для реального времени
-  useEffect(() => {
-    let eventSource: EventSource | null = null;
-    
-    const connectSSE = () => {
-      try {
-        eventSource = new EventSource(`/api/websocket?date=${selectedDate}`);
-        
-        eventSource.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            console.log('SSE сообщение:', data);
-            
-            if (data.type === 'connected') {
-              console.log('SSE соединение установлено');
-            } else if (data.type === 'update') {
-              const currentDate = currentDateRef.current;
-              console.log('SSE обновление - получено обновление для даты:', currentDate);
-              fetchLeads(false, currentDate);
-            } else if (data.type === 'payment_status_updated') {
-              console.log('Получено SSE обновление статуса оплаты:', data.data);
-              // НЕ вызываем fetchLeads(), чтобы не сбросить локальные изменения
-              // Локальное состояние уже обновлено в handlePaymentStatusChange
-            } else if (data.type === 'cache_reset') {
-              console.log('Получена команда сброса кэша:', data.message);
-              // Принудительно перезагружаем страницу для получения актуальной версии
-              window.location.reload();
-            } else if (data.type === 'ping') {
-              console.log('Получен ping от сервера');
-            }
-          } catch (error) {
-            console.error('Ошибка обработки SSE сообщения:', error);
-          }
-        };
-
-        eventSource.onerror = (error) => {
-          console.error('SSE error:', error);
-          if (eventSource) {
-            eventSource.close();
-            eventSource = null;
-          }
-          // Переподключение через 5 секунд
-          setTimeout(connectSSE, 5000);
-        };
-
-        eventSource.onopen = () => {
-          console.log('SSE соединение открыто');
-        };
-      } catch (error) {
-        console.error('Ошибка создания SSE соединения:', error);
-        // Переподключение через 5 секунд
-        setTimeout(connectSSE, 5000);
-      }
-    };
-
-    connectSSE();
-
-    return () => {
-      console.log('Закрываем SSE соединение');
-      if (eventSource) {
-        eventSource.close();
-      }
-    };
-  }, [selectedDate]);
+  // SSE убран - используем только автообновление каждые 30 секунд
 
   // Убираем автоназначение из useEffect, так как оно теперь происходит на сервере
   useEffect(() => {

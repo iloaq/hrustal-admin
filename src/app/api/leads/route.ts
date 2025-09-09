@@ -228,7 +228,7 @@ export async function GET(request: Request) {
         console.timeEnd('DB Query: leads');
         return result;
       },
-      3000 // Уменьшаем кэш до 3 секунд
+      15000 // Увеличиваем кэш до 15 секунд
     );
 
     console.log('GET /api/leads - Получено заявок из БД:', leads.length);
@@ -306,26 +306,7 @@ export async function PUT(request: Request) {
     
     await Promise.all(updatePromises);
     
-    // Отправляем уведомление через SSE
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/websocket/broadcast`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          date: today,
-          data: {
-            type: 'route_exported',
-            leadIds: leadIds,
-            count: leadIds.length
-          }
-        })
-      });
-    } catch (broadcastError) {
-      console.error('Error broadcasting update:', broadcastError);
-    }
+    // SSE убран - обновления через автообновление
     
     return NextResponse.json({ 
       success: true, 
@@ -409,27 +390,7 @@ export async function PATCH(request: Request) {
       updatedLeadId: Number(updatedLead.lead_id)
     });
     
-    // Отправляем уведомление через SSE
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/websocket/broadcast`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          date: today,
-          data: {
-            type: 'lead_updated',
-            leadId: leadId,
-            updates: updateData
-          }
-        })
-      });
-      console.log('PATCH /api/leads - SSE уведомление отправлено');
-    } catch (broadcastError) {
-      console.error('Error broadcasting update:', broadcastError);
-    }
+    // SSE убран - обновления через автообновление
     
     return NextResponse.json({ 
       success: true, 
