@@ -483,6 +483,10 @@ export default function LogisticsPage() {
     console.log('useEffect - Дата изменилась на:', selectedDate);
     currentDateRef.current = selectedDate; // Обновляем ref
     
+    // Показываем загрузку при смене даты
+    setLoading(true);
+    setLeads([]); // Очищаем старые данные
+    
     // Временно отключаем автообновление при смене даты
     setIsEditing(true);
     
@@ -497,14 +501,14 @@ export default function LogisticsPage() {
         fetchLeads(false, selectedDate);
       });
     
-    // Включаем автообновление через 5 секунд
+    // Включаем автообновление через 3 секунд
     const timer = setTimeout(() => {
       setIsEditing(false);
       console.log('Автообновление включено для даты:', selectedDate);
-    }, 5000);
+    }, 3000);
     
     return () => clearTimeout(timer);
-  }, [selectedDate, selectedTime]);
+  }, [selectedDate]); // Убираем selectedTime из зависимостей
 
   // Горячие клавиши для поиска
   useEffect(() => {
@@ -569,8 +573,13 @@ export default function LogisticsPage() {
       const dateToUse = dateOverride || selectedDate;
       console.log('fetchLeads - Используем дату:', dateToUse);
       
-      // Добавляем дату в запрос
-      const response = await fetch(`/api/leads?date=${dateToUse}`);
+      // Добавляем дату в запрос с принудительным обновлением кэша
+      const response = await fetch(`/api/leads?date=${dateToUse}&_t=${Date.now()}`, {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       const data = await response.json();
       
       if (response.ok) {
