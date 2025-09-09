@@ -412,7 +412,7 @@ interface Lead {
   products: any;
   assigned_truck?: string;
   oplata?: string; // способ оплаты
-  stat_oplata?: number; // статус оплаты: 1-не плачено, 2-оплачен в аванс, 3-частично оплачен, 4-оплачен
+  stat_oplata?: number; // статус оплаты: 0-не плачено, 1-оплачено
   dotavleno?: boolean; // доставлено
   comment?: string; // комментарий
   na_zamenu?: boolean; // на замену
@@ -483,9 +483,9 @@ export default function LogisticsPage() {
     console.log('useEffect - Дата изменилась на:', selectedDate);
     currentDateRef.current = selectedDate; // Обновляем ref
     
-    // Показываем загрузку при смене даты
+    // Показываем загрузку при смене даты, но НЕ очищаем данные
     setLoading(true);
-    setLeads([]); // Очищаем старые данные
+    // setLeads([]); // Убираем очистку - показываем старые данные до загрузки новых
     
     // Временно отключаем автообновление при смене даты
     setIsEditing(true);
@@ -960,6 +960,7 @@ export default function LogisticsPage() {
       }
 
       // Сразу обновляем локальное состояние
+      // В текущем коде: 1 = оплачено, 0 = не оплачено
       setLeads(prev => prev.map(lead => 
         lead.lead_id === leadId 
           ? { ...lead, stat_oplata: isPaid ? 1 : 0 }
@@ -1053,13 +1054,7 @@ export default function LogisticsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Загрузка...</div>
-      </div>
-    );
-  }
+  // Убираем полную загрузку - показываем данные с индикатором
 
   if (!Array.isArray(leads)) {
     return (
@@ -1077,10 +1072,18 @@ export default function LogisticsPage() {
       <div className="w-full py-4 px-2 sm:px-4 lg:px-6">
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Логистика</h1>
-              <p className="mt-2 text-sm sm:text-base text-gray-600">Распределение заявок по машинам и регионам</p>
-            </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
+                  Логистика
+                  {loading && (
+                    <span className="ml-3 text-sm text-blue-600 flex items-center">
+                      <span className="animate-spin mr-2">🔄</span>
+                      Загрузка...
+                    </span>
+                  )}
+                </h1>
+                <p className="mt-2 text-sm sm:text-base text-gray-600">Распределение заявок по машинам и регионам</p>
+              </div>
             <div className="flex items-center space-x-4 mt-4 sm:mt-0">
               <button
                 onClick={() => fetchLeads(true)}
