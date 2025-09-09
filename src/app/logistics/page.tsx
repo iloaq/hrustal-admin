@@ -487,6 +487,10 @@ export default function LogisticsPage() {
     setLoading(true);
     // setLeads([]); // Убираем очистку - показываем старые данные до загрузки новых
     
+    // Показываем загрузку при смене даты
+    setLoading(true);
+    setLeads([]); // Очищаем старые данные
+    
     // Временно отключаем автообновление при смене даты
     setIsEditing(true);
     
