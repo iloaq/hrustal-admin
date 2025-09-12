@@ -1798,7 +1798,7 @@ export default function LogisticsPage() {
                                 <h2 style="margin: 0; font-size: 16px; color: #333;">${truck} - ${leads[0]?.delivery_time || ''}</h2>
                                 <div style="font-size: 14px; color: #666; text-align: right;">
                                   <span>Дата: ${selectedDate}</span>
-                                  <span style="margin-left: 20px;">Страница ${pageIndex + 1}</span>
+                                  <span style="margin-left: 20px;">Страница ${pageIndex + 1} из ${pages.length}</span>
                                   <span style="margin-left: 20px;">${leads.length} адресов</span>
                                 </div>
                               </div>
@@ -1955,7 +1955,7 @@ export default function LogisticsPage() {
                                       <h2 style="margin: 0; font-size: 16px; color: #333;">${truck} - ${region.name} - ${leads[0]?.delivery_time || ''}</h2>
                                       <div style="font-size: 14px; color: #666; text-align: right;">
                                         <span>Дата: ${selectedDate}</span>
-                                        <span style="margin-left: 20px;">Страница ${pageIndex + 1}</span>
+                                        <span style="margin-left: 20px;">Страница ${pageIndex + 1} из ${pages.length}</span>
                                         <span style="margin-left: 20px;">${leads.length} адресов</span>
                                       </div>
                                     </div>
