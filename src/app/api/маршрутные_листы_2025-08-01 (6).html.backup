@@ -2,7 +2,6 @@
                       <!DOCTYPE html>
                       <html>
                         <head>
-    <!-- Исправлено 8 отображений товаров - теперь показываются все объемы -->
                           <meta charset="UTF-8">
                           <title>Маршрутные листы</title>
                         </head>
@@ -784,9 +783,9 @@
       <tfoot>
         <tr style="background-color: #f0f0f0; font-weight: bold;">
           <td colspan="6" style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px;">
-            Хрустальная: 11 шт. Малыш: 1 шт. Селен: 2 шт.
+            Хрустальная 19л: 28 шт. Малыш 19л: 1 шт. Селен 19л: 5 шт.
           </td>
-          <td style="border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 13px; font-weight: bold;">14650 ₸</td>
+          <td style="border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 13px; font-weight: bold;">34900 ₸</td>
           <td colspan="2" style="border: 1px solid #ccc; padding: 4px;"></td>
         </tr>
       </tfoot>
@@ -1357,9 +1356,9 @@
       <tfoot>
         <tr style="background-color: #f0f0f0; font-weight: bold;">
           <td colspan="6" style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px;">
-            Хрустальная: 46 шт.
+            Хрустальная 19л: 46 шт. Малыш 19л: 1 шт.
           </td>
-          <td style="border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 13px; font-weight: bold;">47300 ₸</td>
+          <td style="border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 13px; font-weight: bold;">45850 ₸</td>
           <td colspan="2" style="border: 1px solid #ccc; padding: 4px;"></td>
         </tr>
       </tfoot>
@@ -2128,9 +2127,9 @@
       <tfoot>
         <tr style="background-color: #f0f0f0; font-weight: bold;">
           <td colspan="6" style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px;">
-            Хрустальная: 30 шт.
+            Хрустальная 19л: 38 шт. Селен 19л: 4 шт.
           </td>
-          <td style="border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 13px; font-weight: bold;">26300 ₸</td>
+          <td style="border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 13px; font-weight: bold;">41400 ₸</td>
           <td colspan="2" style="border: 1px solid #ccc; padding: 4px;"></td>
         </tr>
       </tfoot>
@@ -2686,9 +2685,9 @@
       <tfoot>
         <tr style="background-color: #f0f0f0; font-weight: bold;">
           <td colspan="6" style="border: 1px solid #ccc; padding: 4px; text-align: left; font-size: 13px;">
-            Хрустальная: 19 шт. Малыш: 2 шт. Селен: 1 шт.
+            Хрустальная 19л: 29 шт. Малыш 19л: 2 шт. Селен 19л: 1 шт.
           </td>
-          <td style="border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 13px; font-weight: bold;">21050 ₸</td>
+          <td style="border: 1px solid #ccc; padding: 4px; text-align: right; font-size: 13px; font-weight: bold;">30050 ₸</td>
           <td colspan="2" style="border: 1px solid #ccc; padding: 4px;"></td>
         </tr>
       </tfoot>

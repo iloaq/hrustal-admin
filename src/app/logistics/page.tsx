@@ -290,24 +290,21 @@ const createLeadsTableHTML = (
         product.name.toLowerCase().includes('селен') && getProductVolume(product) === '5l'
       ).reduce((sum: number, product: any) => sum + (parseInt(product.quantity) || 0), 0);
 
-      // Формирование отображения с объемом
-      const hrustalnayaDisplay = hrustalnaya_19l > 0 
-        ? hrustalnaya_19l.toString() 
-        : hrustalnaya_5l > 0 
-          ? `${hrustalnaya_5l}(5л)` 
-          : '';
+      // Формирование отображения с объемом - исправлено для показа обоих объемов
+      const hrustalnayaParts = [];
+      if (hrustalnaya_19l > 0) hrustalnayaParts.push(hrustalnaya_19l.toString());
+      if (hrustalnaya_5l > 0) hrustalnayaParts.push(`${hrustalnaya_5l}(5л)`);
+      const hrustalnayaDisplay = hrustalnayaParts.join('+');
           
-      const malyshDisplay = malysh_19l > 0 
-        ? malysh_19l.toString() 
-        : malysh_5l > 0 
-          ? `${malysh_5l}(5л)` 
-          : '';
+      const malyshParts = [];
+      if (malysh_19l > 0) malyshParts.push(malysh_19l.toString());
+      if (malysh_5l > 0) malyshParts.push(`${malysh_5l}(5л)`);
+      const malyshDisplay = malyshParts.join('+');
           
-      const selenDisplay = selen_19l > 0 
-        ? selen_19l.toString() 
-        : selen_5l > 0 
-          ? `${selen_5l}(5л)` 
-          : '';
+      const selenParts = [];
+      if (selen_19l > 0) selenParts.push(selen_19l.toString());
+      if (selen_5l > 0) selenParts.push(`${selen_5l}(5л)`);
+      const selenDisplay = selenParts.join('+');
 
       const otherProducts = products.filter((product: any) => {
         const name = product.name.toLowerCase();
@@ -365,25 +362,40 @@ const createLeadsTableHTML = (
     // Формируем список товаров в соответствии с логикой отображения в столбцах
     const nonZeroProducts = [];
     
-    // Столбец "Х" - показываем приоритетно 19л, если есть, иначе 5л
+    // Столбец "Х" - показываем оба объема если есть
+    const hrustalnayaTotalParts = [];
     if (totalStats.hrustalnaya_19l > 0) {
-      nonZeroProducts.push(`Хрустальная 19л: ${totalStats.hrustalnaya_19l} шт.`);
-    } else if (totalStats.hrustalnaya_5l > 0) {
-      nonZeroProducts.push(`Хрустальная 5л: ${totalStats.hrustalnaya_5l} шт.`);
+      hrustalnayaTotalParts.push(`${totalStats.hrustalnaya_19l} шт.`);
+    }
+    if (totalStats.hrustalnaya_5l > 0) {
+      hrustalnayaTotalParts.push(`${totalStats.hrustalnaya_5l} шт.(5л)`);
+    }
+    if (hrustalnayaTotalParts.length > 0) {
+      nonZeroProducts.push(`Хрустальная: ${hrustalnayaTotalParts.join('+')}`);
     }
     
-    // Столбец "С" - показываем приоритетно 19л, если есть, иначе 5л  
+    // Столбец "С" - показываем оба объема если есть
+    const selenTotalParts = [];
     if (totalStats.selen_19l > 0) {
-      nonZeroProducts.push(`Селен 19л: ${totalStats.selen_19l} шт.`);
-    } else if (totalStats.selen_5l > 0) {
-      nonZeroProducts.push(`Селен 5л: ${totalStats.selen_5l} шт.`);
+      selenTotalParts.push(`${totalStats.selen_19l} шт.`);
+    }
+    if (totalStats.selen_5l > 0) {
+      selenTotalParts.push(`${totalStats.selen_5l} шт.(5л)`);
+    }
+    if (selenTotalParts.length > 0) {
+      nonZeroProducts.push(`Селен: ${selenTotalParts.join('+')}`);
     }
     
-    // Столбец "М" - показываем приоритетно 19л, если есть, иначе 5л
+    // Столбец "М" - показываем оба объема если есть
+    const malyshTotalParts = [];
     if (totalStats.malysh_19l > 0) {
-      nonZeroProducts.push(`Малыш 19л: ${totalStats.malysh_19l} шт.`);
-    } else if (totalStats.malysh_5l > 0) {
-      nonZeroProducts.push(`Малыш 5л: ${totalStats.malysh_5l} шт.`);
+      malyshTotalParts.push(`${totalStats.malysh_19l} шт.`);
+    }
+    if (totalStats.malysh_5l > 0) {
+      malyshTotalParts.push(`${totalStats.malysh_5l} шт.(5л)`);
+    }
+    if (malyshTotalParts.length > 0) {
+      nonZeroProducts.push(`Малыш: ${malyshTotalParts.join('+')}`);
     }
     if (totalStats.tara_5l > 0) {
       nonZeroProducts.push(`Тара 5л: ${totalStats.tara_5l} шт.`);
@@ -856,6 +868,14 @@ export default function LogisticsPage() {
         products
       };
     });
+  };
+
+  // Вспомогательная функция для форматирования товаров
+  const formatProductDisplay = (product19l: number, product5l: number, productName: string) => {
+    const parts = [];
+    if (product19l > 0) parts.push(`${product19l} шт.`);
+    if (product5l > 0) parts.push(`${product5l} шт.(5л)`);
+    return parts.length > 0 ? `${productName}: ${parts.join('+')}` : '';
   };
 
   // Получаем сгруппированные данные
@@ -2033,18 +2053,15 @@ export default function LogisticsPage() {
                   </div>
                   <div className="text-xs text-gray-600 mt-1">
                     <div>
-                      Хрустальная 19л: {region.products.hrustalnaya_19l} шт. | 
-                      Хрустальная 5л: {region.products.hrustalnaya_5l} шт. | 
-                      Малыш 19л: {region.products.malysh_19l} шт. | 
-                      Малыш 5л: {region.products.malysh_5l} шт.
+                      {formatProductDisplay(region.products.hrustalnaya_19l, region.products.hrustalnaya_5l, 'Хрустальная')} | 
+                      {formatProductDisplay(region.products.malysh_19l, region.products.malysh_5l, 'Малыш')}
                     </div>
                     <div>
-                      Селен 19л: {region.products.selen_19l} шт. | 
-                      Селен 5л: {region.products.selen_5l} шт. | 
-                      Тара 5л: {region.products.tara_5l} шт. | 
-                      Помпа мех.: {region.products.pompa_meh} шт. | 
-                      Помпа эл.: {region.products.pompa_el} шт. | 
-                      Стаканчики: {region.products.stakanchiki} шт.
+                      {formatProductDisplay(region.products.selen_19l, region.products.selen_5l, 'Селен')} | 
+                      {region.products.tara_5l > 0 ? `Тара 5л: ${region.products.tara_5l} шт.` : ''} | 
+                      {region.products.pompa_meh > 0 ? `Помпа мех.: ${region.products.pompa_meh} шт.` : ''} | 
+                      {region.products.pompa_el > 0 ? `Помпа эл.: ${region.products.pompa_el} шт.` : ''} | 
+                      {region.products.stakanchiki > 0 ? `Стаканчики: ${region.products.stakanchiki} шт.` : ''}
                     </div>
                   </div>
                 </div>
@@ -2064,18 +2081,15 @@ export default function LogisticsPage() {
                   </h3>
                   <div className="text-sm text-gray-600 mt-1">
                     <div>
-                      Хрустальная 19л: {group.products.hrustalnaya_19l} шт. | 
-                      Хрустальная 5л: {group.products.hrustalnaya_5l} шт. | 
-                      Малыш 19л: {group.products.malysh_19l} шт. | 
-                      Малыш 5л: {group.products.malysh_5l} шт.
+                      {formatProductDisplay(group.products.hrustalnaya_19l, group.products.hrustalnaya_5l, 'Хрустальная')} | 
+                      {formatProductDisplay(group.products.malysh_19l, group.products.malysh_5l, 'Малыш')}
                     </div>
                     <div>
-                      Селен 19л: {group.products.selen_19l} шт. | 
-                      Селен 5л: {group.products.selen_5l} шт. | 
-                      Тара 5л: {group.products.tara_5l} шт. | 
-                      Помпа мех.: {group.products.pompa_meh} шт. | 
-                      Помпа эл.: {group.products.pompa_el} шт. | 
-                      Стаканчики: {group.products.stakanchiki} шт.
+                      {formatProductDisplay(group.products.selen_19l, group.products.selen_5l, 'Селен')} | 
+                      {group.products.tara_5l > 0 ? `Тара 5л: ${group.products.tara_5l} шт.` : ''} | 
+                      {group.products.pompa_meh > 0 ? `Помпа мех.: ${group.products.pompa_meh} шт.` : ''} | 
+                      {group.products.pompa_el > 0 ? `Помпа эл.: ${group.products.pompa_el} шт.` : ''} | 
+                      {group.products.stakanchiki > 0 ? `Стаканчики: ${group.products.stakanchiki} шт.` : ''}
                     </div>
                   </div>
                 </div>
