@@ -24,6 +24,39 @@ const splitLeadsIntoPages = (leads: any[], maxLeadsPerPage: number = 18) => {
   return pages;
 };
 
+// Общая функция для определения объема продукта
+const getProductVolume = (product: any) => {
+  const name = product.name.toLowerCase();
+  const volume = product.volume;
+  
+  // Если есть поле volume - используем его
+  if (volume) {
+    return volume;
+  }
+  
+  // Если в названии есть указание на 5л
+  if (name.includes('5л') || name.includes('5 литр') || name.includes('5 литров')) {
+    return '5l';
+  }
+  
+  // Проверяем точные названия продуктов
+  if (name.includes('хрустальная 5л') || name.includes('хрустальаня 5л')) {
+    return '5l';
+  }
+  if (name.includes('селен 5л')) {
+    return '5l';
+  }
+  if (name.includes('малыш 5л') || name.includes('малышл 5л')) {
+    return '5l';
+  }
+  if (name.includes('тара 19л')) {
+    return '19l';
+  }
+  
+  // По умолчанию 19л для старых заявок
+  return '19l';
+};
+
 // Функция для создания таблицы заявок с разбивкой на страницы
 const createLeadsTableHTML = (
   leads: any[], 
@@ -79,39 +112,6 @@ const createLeadsTableHTML = (
       })) : []
     });
 
-    // Функция для определения объема продукта
-    const getProductVolume = (product: any) => {
-      const name = product.name.toLowerCase();
-      const volume = product.volume;
-      
-      // Если в названии есть указание на 5л
-      if (name.includes('5л') || name.includes('5л') || name.includes('5 литр') || name.includes('5 литров')) {
-        return '5l';
-      }
-      
-      // Если есть поле volume
-      if (volume) {
-        return volume;
-      }
-      
-      // Проверяем точные названия продуктов
-      if (name.includes('хрустальная 5л') || name.includes('хрустальаня 5л')) {
-        return '5l';
-      }
-      if (name.includes('селен 5л')) {
-        return '5l';
-      }
-      if (name.includes('малыш 5л') || name.includes('малышл 5л')) {
-        return '5l';
-      }
-      if (name.includes('тара 19л')) {
-        return '19l';
-      }
-      
-      // По умолчанию 19л для старых заявок
-      return '19l';
-    };
-
     filteredLeads.forEach(lead => {
       const leadSum: number = (lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))
         ? Number(lead.price)
@@ -154,8 +154,11 @@ const createLeadsTableHTML = (
           volume,
           originalVolume: product.volume,
           willAddToHrustalnaya19l: productName.includes('хрустальная') && volume === '19l',
+          willAddToHrustalnaya5l: productName.includes('хрустальная') && volume === '5l',
           willAddToMalysh19l: productName.includes('малыш') && volume === '19l',
-          willAddToSelen19l: productName.includes('селен') && volume === '19l'
+          willAddToMalysh5l: productName.includes('малыш') && volume === '5l',
+          willAddToSelen19l: productName.includes('селен') && volume === '19l',
+          willAddToSelen5l: productName.includes('селен') && volume === '5l'
         });
 
         // Логика подсчета должна соответствовать логике отображения в столбцах
@@ -190,6 +193,16 @@ const createLeadsTableHTML = (
     });
     
     console.log('Финальная статистика товаров:', stats);
+    
+    // Дополнительная диагностика для итоговой строки
+    console.log('=== ДИАГНОСТИКА ИТОГОВОЙ СТРОКИ ===');
+    console.log('hrustalnaya_19l:', stats.hrustalnaya_19l);
+    console.log('hrustalnaya_5l:', stats.hrustalnaya_5l);
+    console.log('malysh_19l:', stats.malysh_19l);
+    console.log('malysh_5l:', stats.malysh_5l);
+    console.log('selen_19l:', stats.selen_19l);
+    console.log('selen_5l:', stats.selen_5l);
+    
     return stats;
   };
 
@@ -232,38 +245,6 @@ const createLeadsTableHTML = (
         })));
       }
       
-      // Функция для определения объема продукта
-      const getProductVolume = (product: any) => {
-        const name = product.name.toLowerCase();
-        const volume = product.volume;
-        
-        // Если в названии есть указание на 5л
-        if (name.includes('5л') || name.includes('5л') || name.includes('5 литр') || name.includes('5 литров')) {
-          return '5l';
-        }
-        
-        // Если есть поле volume
-        if (volume) {
-          return volume;
-        }
-        
-        // Проверяем точные названия продуктов
-        if (name.includes('хрустальная 5л') || name.includes('хрустальаня 5л')) {
-          return '5l';
-        }
-        if (name.includes('селен 5л')) {
-          return '5l';
-        }
-        if (name.includes('малыш 5л') || name.includes('малышл 5л')) {
-          return '5l';
-        }
-        if (name.includes('тара 19л')) {
-          return '19l';
-        }
-        
-        // По умолчанию 19л для старых заявок
-        return '19l';
-      };
       
       // Подсчет с учетом объема
       const hrustalnaya_19l = products.filter((product: any) => 
@@ -371,7 +352,9 @@ const createLeadsTableHTML = (
       hrustalnayaTotalParts.push(`${totalStats.hrustalnaya_5l} шт.(5л)`);
     }
     if (hrustalnayaTotalParts.length > 0) {
-      nonZeroProducts.push(`Хрустальная: ${hrustalnayaTotalParts.join('+')}`);
+      const hrustalnayaDisplay = `Хрустальная: ${hrustalnayaTotalParts.join('+')}`;
+      nonZeroProducts.push(hrustalnayaDisplay);
+      console.log('Добавляем в итоги Хрустальную:', hrustalnayaDisplay);
     }
     
     // Столбец "С" - показываем оба объема если есть
@@ -383,7 +366,9 @@ const createLeadsTableHTML = (
       selenTotalParts.push(`${totalStats.selen_5l} шт.(5л)`);
     }
     if (selenTotalParts.length > 0) {
-      nonZeroProducts.push(`Селен: ${selenTotalParts.join('+')}`);
+      const selenDisplay = `Селен: ${selenTotalParts.join('+')}`;
+      nonZeroProducts.push(selenDisplay);
+      console.log('Добавляем в итоги Селен:', selenDisplay);
     }
     
     // Столбец "М" - показываем оба объема если есть
@@ -395,7 +380,9 @@ const createLeadsTableHTML = (
       malyshTotalParts.push(`${totalStats.malysh_5l} шт.(5л)`);
     }
     if (malyshTotalParts.length > 0) {
-      nonZeroProducts.push(`Малыш: ${malyshTotalParts.join('+')}`);
+      const malyshDisplay = `Малыш: ${malyshTotalParts.join('+')}`;
+      nonZeroProducts.push(malyshDisplay);
+      console.log('Добавляем в итоги Малыш:', malyshDisplay);
     }
     if (totalStats.tara_5l > 0) {
       nonZeroProducts.push(`Тара 5л: ${totalStats.tara_5l} шт.`);
@@ -409,6 +396,11 @@ const createLeadsTableHTML = (
     if (totalStats.stakanchiki > 0) {
       nonZeroProducts.push(`Стаканчики: ${totalStats.stakanchiki} шт.`);
     }
+    
+    console.log('=== ФИНАЛЬНАЯ ИТОГОВАЯ СТРОКА ===');
+    console.log('nonZeroProducts:', nonZeroProducts);
+    console.log('Итоговая строка будет:', nonZeroProducts.join(' '));
+    console.log('Общая сумма:', totalStats.totalSum);
     
     tableHTML += `
       </tbody>
@@ -717,38 +709,6 @@ export default function LogisticsPage() {
       totalSum: 0 
     };
     
-    // Функция для определения объема продукта
-    const getProductVolume = (product: any) => {
-      const name = product.name.toLowerCase();
-      const volume = product.volume;
-      
-      // Если в названии есть указание на 5л
-      if (name.includes('5л') || name.includes('5л') || name.includes('5 литр') || name.includes('5 литров')) {
-        return '5l';
-      }
-      
-      // Если есть поле volume
-      if (volume) {
-        return volume;
-      }
-      
-      // Проверяем точные названия продуктов
-      if (name.includes('хрустальная 5л') || name.includes('хрустальаня 5л')) {
-        return '5l';
-      }
-      if (name.includes('селен 5л')) {
-        return '5l';
-      }
-      if (name.includes('малыш 5л') || name.includes('малышл 5л')) {
-        return '5l';
-      }
-      if (name.includes('тара 19л')) {
-        return '19l';
-      }
-      
-      // По умолчанию 19л для старых заявок
-      return '19l';
-    };
     
     leads.forEach(lead => {
       const leadSum: number = (lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))
