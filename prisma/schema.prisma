@@ -32,6 +32,7 @@ model Lead {
   price                 String?           @db.VarChar(255)
   production_orders     ProductionOrder[]
   truck_assignments     TruckAssignment[]
+  driver_assignments    DriverAssignment[]
 
   @@map("leads")
 }
@@ -129,4 +130,237 @@ model truck_configs {
   regionGroups String
   created_at   DateTime @default(now())
   updated_at   DateTime
+}
+
+// === СИСТЕМА ДЛЯ ВОДИТЕЛЕЙ ===
+
+model Driver {
+  id                    BigInt               @id @default(autoincrement())
+  name                  String               @db.VarChar(100)
+  phone                 String?              @db.VarChar(20)
+  login                 String               @unique @db.VarChar(50)
+  license_number        String?              @db.VarChar(50)
+  pin_code              String               @db.VarChar(10)
+  is_active             Boolean              @default(true)
+  status                String               @default("offline") @db.VarChar(50) // online, offline, broken_vehicle
+  created_at            DateTime             @default(now())
+  updated_at            DateTime             @updatedAt
+  
+  // Связи
+  driver_districts      DriverDistrict[]
+  driver_vehicles       DriverVehicle[]
+  driver_assignments    DriverAssignment[]
+  courier_districts     CourierDistrict[]
+  courier_vehicles      CourierVehicle[]
+  courier_tasks         CourierTask[]
+  courier_vehicle_schedule CourierVehicleSchedule[]
+
+  @@map("drivers")
+}
+
+model District {
+  id                    BigInt               @id @default(autoincrement())
+  name                  String               @unique @db.VarChar(100)
+  description           String?              @db.VarChar(500)
+  is_active             Boolean              @default(true)
+  created_at            DateTime             @default(now())
+  updated_at            DateTime             @updatedAt
+  
+  // Связи
+  driver_districts      DriverDistrict[]
+  vehicle_districts     VehicleDistrict[]
+  vehicle_district_schedule VehicleDistrictSchedule[]
+  courier_districts     CourierDistrict[]
+
+  @@map("districts")
+}
+
+model Vehicle {
+  id                    BigInt               @id @default(autoincrement())
+  name                  String               @unique @db.VarChar(100)
+  brand                 String?              @db.VarChar(100)
+  license_plate         String?              @db.VarChar(20)
+  capacity              Int?
+  is_active             Boolean              @default(true)
+  created_at            DateTime             @default(now())
+  updated_at            DateTime             @updatedAt
+  
+  // Связи
+  driver_vehicles       DriverVehicle[]
+  driver_assignments    DriverAssignment[]
+  vehicle_districts     VehicleDistrict[]
+  vehicle_district_schedule VehicleDistrictSchedule[]
+  courier_vehicles      CourierVehicle[]
+  courier_vehicle_schedule CourierVehicleSchedule[]
+
+  @@map("vehicles")
+}
+
+model DriverDistrict {
+  id          BigInt   @id @default(autoincrement())
+  driver_id   BigInt
+  district_id BigInt
+  assigned_at DateTime @default(now())
+  is_active   Boolean  @default(true)
+  
+  // Связи
+  driver      Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  district    District @relation(fields: [district_id], references: [id], onDelete: Cascade)
+
+  @@unique([driver_id, district_id])
+  @@map("driver_districts")
+}
+
+model DriverVehicle {
+  id                    BigInt   @id @default(autoincrement())
+  driver_id             BigInt
+  vehicle_id            BigInt
+  assigned_at           DateTime @default(now())
+  is_active             Boolean  @default(true)
+  is_primary            Boolean  @default(false)
+  
+  // Связи
+  driver                Driver   @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  vehicle               Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+
+  @@unique([driver_id, vehicle_id])
+  @@map("driver_vehicles")
+}
+
+model DriverAssignment {
+  id            BigInt    @id @default(autoincrement())
+  driver_id     BigInt
+  lead_id       BigInt
+  vehicle_id    BigInt?
+  delivery_date DateTime  @db.Date
+  delivery_time String?   @db.VarChar(50)
+  status        String    @default("assigned") @db.VarChar(50) // assigned, started, delivered, broken
+  accepted_at   DateTime?
+  started_at    DateTime?
+  completed_at  DateTime?
+  driver_notes  String?   @db.VarChar(1000)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  
+  // Связи
+  driver        Driver    @relation(fields: [driver_id], references: [id], onDelete: Cascade)
+  lead          Lead      @relation(fields: [lead_id], references: [lead_id], onDelete: Cascade)
+  vehicle       Vehicle?  @relation(fields: [vehicle_id], references: [id], onDelete: SetNull)
+
+  @@unique([driver_id, lead_id, delivery_date])
+  @@index([driver_id, delivery_date])
+  @@index([lead_id])
+  @@map("driver_assignments")
+}
+
+model VehicleDistrict {
+  id          BigInt   @id @default(autoincrement())
+  vehicle_id  BigInt
+  district_id BigInt
+  assigned_at DateTime @default(now())
+  is_active   Boolean  @default(true)
+  
+  // Связи
+  vehicle     Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  district    District @relation(fields: [district_id], references: [id], onDelete: Cascade)
+
+  @@unique([vehicle_id, district_id])
+  @@map("vehicle_districts")
+}
+
+model VehicleDistrictSchedule {
+  id          BigInt   @id @default(autoincrement())
+  vehicle_id  BigInt
+  district_id BigInt
+  date        DateTime @db.Date
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  created_by  String?  @db.VarChar(100)
+  notes       String?  @db.VarChar(500)
+  
+  // Связи
+  vehicle     Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+  district    District @relation(fields: [district_id], references: [id], onDelete: Cascade)
+
+  @@unique([vehicle_id, district_id, date])
+  @@index([date])
+  @@index([district_id, date])
+  @@index([vehicle_id, date])
+  @@map("vehicle_district_schedule")
+}
+
+// === КУРЬЕРСКАЯ СИСТЕМА ===
+
+model CourierDistrict {
+  id          BigInt   @id @default(autoincrement())
+  courier_id  BigInt
+  district_id BigInt
+  assigned_at DateTime @default(now())
+  is_active   Boolean  @default(true)
+  
+  // Связи
+  courier     Driver   @relation(fields: [courier_id], references: [id], onDelete: Cascade)
+  district    District @relation(fields: [district_id], references: [id], onDelete: Cascade)
+
+  @@unique([courier_id, district_id])
+  @@map("courier_districts")
+}
+
+model CourierTask {
+  id           BigInt    @id @default(autoincrement())
+  courier_id   BigInt
+  title        String    @db.VarChar(255)
+  description  String?   @db.VarChar(1000)
+  address      String?   @db.VarChar(500)
+  client_name  String?   @db.VarChar(100)
+  client_phone String?   @db.VarChar(20)
+  task_date    DateTime  @db.Date
+  status       String    @default("pending") @db.VarChar(50)
+  priority     String    @default("normal") @db.VarChar(50)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  completed_at DateTime?
+  notes        String?   @db.VarChar(1000)
+  
+  // Связи
+  courier      Driver    @relation(fields: [courier_id], references: [id], onDelete: Cascade)
+
+  @@index([courier_id, task_date])
+  @@map("courier_tasks")
+}
+
+model CourierVehicle {
+  id          BigInt   @id @default(autoincrement())
+  courier_id  BigInt
+  vehicle_id  BigInt
+  assigned_at DateTime @default(now())
+  is_active   Boolean  @default(true)
+  
+  // Связи
+  courier     Driver   @relation(fields: [courier_id], references: [id], onDelete: Cascade)
+  vehicle     Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+
+  @@unique([courier_id, vehicle_id])
+  @@map("courier_vehicles")
+}
+
+model CourierVehicleSchedule {
+  id         BigInt   @id @default(autoincrement())
+  courier_id BigInt
+  vehicle_id BigInt
+  date       DateTime @db.Date
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  created_by String?  @db.VarChar(100)
+  notes      String?  @db.VarChar(500)
+  
+  // Связи
+  courier    Driver   @relation(fields: [courier_id], references: [id], onDelete: Cascade)
+  vehicle    Vehicle  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+
+  @@unique([courier_id, vehicle_id, date])
+  @@index([courier_id, date])
+  @@index([date])
+  @@index([vehicle_id, date])
+  @@map("courier_vehicle_schedule")
 }
