@@ -65,6 +65,30 @@ export default function Navigation({ currentPage, onPageChange }: NavigationProp
                       Логистика
                     </button>
                     <button
+                      onClick={() => window.open('/logistics/drivers', '_blank')}
+                      className="px-2 sm:px-3 py-1 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    >
+                      🚗 Водители
+                    </button>
+                    <button
+                      onClick={() => window.open('/logistics/vehicles', '_blank')}
+                      className="px-2 sm:px-3 py-1 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    >
+                      🚗 Машины
+                    </button>
+                    <button
+                      onClick={() => window.open('/logistics/districts', '_blank')}
+                      className="px-2 sm:px-3 py-1 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    >
+                      🗺️ Районы
+                    </button>
+                    <button
+                      onClick={() => window.open('/drivers', '_blank')}
+                      className="px-2 sm:px-3 py-1 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    >
+                      📱 Мобильное
+                    </button>
+                    <button
                       onClick={() => onPageChange('production')}
                       className={`px-2 sm:px-3 py-1 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                         currentPage === 'production'
