@@ -558,6 +558,26 @@ function DriverCard({ driver, onEdit, onDelete }: {
           </div>
         </div>
 
+        {/* Дополнительная статистика */}
+        {driver.stats.total > 0 && (
+          <div className="bg-gray-50 rounded-lg p-3 mb-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Процент выполнения:</span>
+                <span className="font-medium text-green-600">
+                  {Math.round((driver.stats.delivered / driver.stats.total) * 100)}%
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">В работе:</span>
+                <span className="font-medium text-yellow-600">
+                  {driver.stats.started + driver.stats.assigned}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Подробная информация */}
         {showDetails && (
           <div className="border-t border-gray-200 pt-4">

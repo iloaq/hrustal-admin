@@ -77,10 +77,10 @@ export default function Navigation({ currentPage, onPageChange }: NavigationProp
                       🚗 Машины
                     </button>
                     <button
-                      onClick={() => window.open('/logistics/districts', '_blank')}
+                      onClick={() => window.open('/logistics/schedule', '_blank')}
                       className="px-2 sm:px-3 py-1 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                     >
-                      🗺️ Районы
+                      📅 Расписание
                     </button>
                     <button
                       onClick={() => window.open('/drivers', '_blank')}

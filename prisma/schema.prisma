@@ -154,6 +154,7 @@ model Driver {
   courier_vehicles      CourierVehicle[]
   courier_tasks         CourierTask[]
   courier_vehicle_schedule CourierVehicleSchedule[]
+  orders                Order[]
 
   @@map("drivers")
 }
@@ -192,6 +193,8 @@ model Vehicle {
   vehicle_district_schedule VehicleDistrictSchedule[]
   courier_vehicles      CourierVehicle[]
   courier_vehicle_schedule CourierVehicleSchedule[]
+  orders                Order[]
+  region_overrides      RegionOverride[]
 
   @@map("vehicles")
 }
@@ -363,4 +366,60 @@ model CourierVehicleSchedule {
   @@index([date])
   @@index([vehicle_id, date])
   @@map("courier_vehicle_schedule")
+}
+
+// === СИСТЕМА ЗАКАЗОВ ===
+
+model Order {
+  id               BigInt    @id @default(autoincrement())
+  external_id      String?   @unique @db.VarChar(100) // ID из CRM
+  customer_name    String    @db.VarChar(255)
+  customer_phone   String?   @db.VarChar(20)
+  customer_address String    @db.VarChar(500)
+  region           String    @db.VarChar(100) // Район доставки
+  products         Json      // Список товаров
+  total_amount     Decimal?  @db.Decimal(10, 2)
+  delivery_date    DateTime  @db.Date
+  delivery_time    String?   @db.VarChar(50)
+  status           String    @default("new") @db.VarChar(50) // new, assigned, accepted, in_progress, completed, cancelled
+  driver_id        BigInt?
+  vehicle_id       BigInt?
+  assigned_at      DateTime?
+  accepted_at      DateTime?
+  started_at       DateTime?
+  completed_at     DateTime?
+  cancelled_at     DateTime?
+  cancellation_reason String? @db.VarChar(500)
+  driver_notes     String?   @db.VarChar(1000)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  
+  // Связи
+  driver           Driver?   @relation(fields: [driver_id], references: [id], onDelete: SetNull)
+  vehicle          Vehicle?  @relation(fields: [vehicle_id], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([delivery_date])
+  @@index([driver_id])
+  @@index([region])
+  @@map("orders")
+}
+
+model RegionOverride {
+  id               BigInt    @id @default(autoincrement())
+  date             DateTime  @db.Date
+  region           String    @db.VarChar(100)
+  vehicle_id       BigInt
+  is_active        Boolean   @default(true)
+  created_at       DateTime  @default(now())
+  created_by       String?   @db.VarChar(100)
+  notes            String?   @db.VarChar(500)
+  
+  // Связи
+  vehicle          Vehicle   @relation(fields: [vehicle_id], references: [id], onDelete: Cascade)
+
+  @@unique([date, region])
+  @@index([date])
+  @@index([region])
+  @@map("region_overrides")
 }

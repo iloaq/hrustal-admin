@@ -74,12 +74,12 @@ export async function POST(request: NextRequest) {
       login: driver.login,
       license_number: driver.license_number,
       status: 'online',
-      districts: driver.driver_districts.map(dd => ({
+      districts: driver.driver_districts.map((dd: any) => ({
         id: dd.district.id.toString(),
         name: dd.district.name,
         description: dd.district.description
       })),
-      vehicles: driver.driver_vehicles.map(dv => ({
+      vehicles: driver.driver_vehicles.map((dv: any) => ({
         id: dv.vehicle.id.toString(),
         name: dv.vehicle.name,
         brand: dv.vehicle.brand,

@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       ]
     });
     
-    const formattedAssignments = assignments.map(assignment => {
+    const formattedAssignments = assignments.map((assignment: any) => {
       const info = assignment.lead.info as any;
       
       return {

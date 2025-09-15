@@ -3,85 +3,98 @@ import { PrismaClient } from '@/generated/prisma';
 
 const prisma = new PrismaClient();
 
-// Получить всех водителей с их статусами и заказами
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
-    const status = searchParams.get('status'); // online, offline, broken_vehicle
-    const district_id = searchParams.get('district_id');
     
-    // Получаем водителей с их данными
+    const queryDate = new Date(date);
+    queryDate.setHours(0, 0, 0, 0);
+
     const drivers = await prisma.driver.findMany({
-      where: {
-        is_active: true,
-        ...(status && { status }),
-        ...(district_id && {
-          driver_districts: {
-            some: {
-              district_id: BigInt(district_id),
-              is_active: true
-            }
-          }
-        })
-      },
+      where: { is_active: true },
       include: {
+        driver_vehicles: {
+          include: { vehicle: true }
+        },
         driver_districts: {
           where: { is_active: true },
-          include: {
-            district: true
-          }
-        },
-        driver_vehicles: {
-          where: { is_active: true },
-          include: {
-            vehicle: true
-          }
-        },
-        driver_assignments: {
-          where: {
-            delivery_date: new Date(date)
-          },
-          include: {
-            lead: {
-              select: {
-                lead_id: true,
-                name: true,
-                info: true,
-                price: true,
-                stat_oplata: true
-              }
-            },
-            vehicle: {
-              select: {
-                id: true,
-                name: true,
-                license_plate: true
-              }
-            }
-          },
-          orderBy: {
-            created_at: 'asc'
-          }
+          include: { district: true }
         }
       },
-      orderBy: {
-        name: 'asc'
+      orderBy: { name: 'asc' }
+    });
+
+    // Получаем статистику из leads и truck_assignments
+    const leadsWithAssignments = await prisma.lead.findMany({
+      where: { delivery_date: queryDate },
+      include: {
+        truck_assignments: {
+          where: { status: 'active' }
+        }
       }
     });
-    
-    // Форматируем данные для фронтенда
-    const formattedDrivers = drivers.map(driver => {
-      const assignments = driver.driver_assignments;
+
+    // Маппинг водителей к машинам (по truck_assignments)
+    const driverTruckMapping: Record<string, string[]> = {
+      '10': ['Машина 1'],        // Водитель 10 -> Машина 1
+      '9': ['Машина 2'],         // Водитель 9 -> Машина 2
+      '13': ['Машина 3'],        // Водитель 13 -> Машина 3
+      '12': ['Машина 4'],        // Водитель 12 -> Машина 4
+      '8': ['Машина 5'],         // Водитель 8 -> Машина 5
+      '11': ['Машина 6']         // Водитель 11 -> Машина 6
+    };
+
+    // Подсчет статистики
+    let totalAssignments = 0;
+    let totalDelivered = 0;
+    let onlineCount = 0;
+    let offlineCount = 0;
+    let brokenVehicleCount = 0;
+
+    const formattedDrivers = drivers.map((driver: any) => {
+      const driverId = driver.id.toString();
+      const driverTrucks = driverTruckMapping[driverId] || [];
       
+      // Фильтруем leads по машинам водителя (через truck_assignments)
+      const driverLeads = leadsWithAssignments.filter((lead: any) => {
+        return lead.truck_assignments.some((assignment: any) => 
+          driverTrucks.includes(assignment.truck_name)
+        );
+      });
+
+      // Подсчитываем статистику по статусам truck_assignments
       const stats = {
-        total: assignments.length,
-        assigned: assignments.filter(a => a.status === 'assigned').length,
-        started: assignments.filter(a => a.status === 'started').length,
-        delivered: assignments.filter(a => a.status === 'delivered').length,
-        broken: assignments.filter(a => a.status === 'broken').length
+        total: driverLeads.length,
+        assigned: driverLeads.filter((lead: any) => 
+          lead.truck_assignments.length > 0 && 
+          !lead.truck_assignments[0].accepted_at && 
+          !lead.truck_assignments[0].started_at && 
+          !lead.truck_assignments[0].completed_at
+        ).length,
+        started: driverLeads.filter((lead: any) => 
+          lead.truck_assignments.length > 0 && 
+          lead.truck_assignments[0].accepted_at && 
+          lead.truck_assignments[0].started_at && 
+          !lead.truck_assignments[0].completed_at
+        ).length,
+        delivered: driverLeads.filter((lead: any) => 
+          lead.truck_assignments.length > 0 && 
+          lead.truck_assignments[0].completed_at
+        ).length,
+        broken: driverLeads.filter((lead: any) => 
+          lead.truck_assignments.length > 0 && 
+          lead.truck_assignments[0].cancelled_at
+        ).length
       };
-      
+
+      totalAssignments += stats.total;
+      totalDelivered += stats.delivered;
+
+      if (driver.status === 'online') onlineCount++;
+      else if (driver.status === 'offline') offlineCount++;
+      else if (driver.status === 'broken_vehicle') brokenVehicleCount++;
+
       return {
         id: driver.id.toString(),
         name: driver.name,
@@ -89,255 +102,70 @@ export async function GET(request: NextRequest) {
         login: driver.login,
         license_number: driver.license_number,
         status: driver.status,
-        created_at: driver.created_at,
-        updated_at: driver.updated_at,
-        
-        districts: driver.driver_districts.map(dd => ({
+        created_at: driver.created_at.toISOString(),
+        updated_at: driver.updated_at.toISOString(),
+        districts: driver.driver_districts.map((dd: any) => ({
           id: dd.district.id.toString(),
           name: dd.district.name,
           description: dd.district.description,
-          assigned_at: dd.assigned_at
+          assigned_at: dd.assigned_at.toISOString()
         })),
-        
-        vehicles: driver.driver_vehicles.map(dv => ({
+        vehicles: driver.driver_vehicles.map((dv: any) => ({
           id: dv.vehicle.id.toString(),
           name: dv.vehicle.name,
           brand: dv.vehicle.brand,
           license_plate: dv.vehicle.license_plate,
-          capacity: dv.vehicle.capacity,
+          capacity: dv.vehicle.capacity ? Number(dv.vehicle.capacity) : null,
           is_primary: dv.is_primary,
-          is_active: dv.vehicle.is_active,
-          assigned_at: dv.assigned_at
+          is_active: dv.is_active,
+          assigned_at: dv.assigned_at.toISOString()
         })),
-        
-        assignments: assignments.map(assignment => ({
-          id: assignment.id.toString(),
-          lead_id: assignment.lead.lead_id.toString(),
-          client_name: (assignment.lead.info as any)?.name || assignment.lead.name,
-          price: assignment.lead.price,
-          is_paid: assignment.lead.stat_oplata === 1,
-          status: assignment.status,
-          delivery_time: assignment.delivery_time,
-          vehicle_name: assignment.vehicle?.name,
-          accepted_at: assignment.accepted_at,
-          started_at: assignment.started_at,
-          completed_at: assignment.completed_at,
-          driver_notes: assignment.driver_notes
-        })),
-        
+        assignments: driverLeads.map((lead: any) => {
+          const info = typeof lead.info === 'string' ? JSON.parse(lead.info) : lead.info;
+          const assignment = lead.truck_assignments[0];
+          
+          let status = 'assigned';
+          if (assignment?.completed_at) status = 'delivered';
+          else if (assignment?.started_at) status = 'started';
+          else if (assignment?.accepted_at) status = 'accepted';
+          else if (assignment?.cancelled_at) status = 'broken';
+
+          return {
+            id: lead.lead_id.toString(),
+            lead_id: lead.lead_id.toString(),
+            client_name: info?.name || '',
+            price: lead.price,
+            is_paid: lead.stat_oplata === 2,
+            status,
+            delivery_time: lead.delivery_time,
+            vehicle_name: assignment?.truck_name || 'Не назначена',
+            accepted_at: assignment?.accepted_at?.toISOString(),
+            started_at: assignment?.started_at?.toISOString(),
+            completed_at: assignment?.completed_at?.toISOString(),
+            driver_notes: assignment?.notes
+          };
+        }),
         stats
       };
     });
-    
-    // Общая статистика
-    const totalStats = {
-      total_drivers: formattedDrivers.length,
-      online: formattedDrivers.filter(d => d.status === 'online').length,
-      offline: formattedDrivers.filter(d => d.status === 'offline').length,
-      broken_vehicle: formattedDrivers.filter(d => d.status === 'broken_vehicle').length,
-      total_assignments: formattedDrivers.reduce((sum, d) => sum + d.stats.total, 0),
-      total_delivered: formattedDrivers.reduce((sum, d) => sum + d.stats.delivered, 0),
-      total_broken: formattedDrivers.reduce((sum, d) => sum + d.stats.broken, 0)
-    };
-    
+
     return NextResponse.json({
       success: true,
       drivers: formattedDrivers,
-      stats: totalStats,
-      date
+      stats: {
+        total_drivers: drivers.length,
+        online: onlineCount,
+        offline: offlineCount,
+        broken_vehicle: brokenVehicleCount,
+        total_assignments: totalAssignments,
+        total_delivered: totalDelivered
+      }
     });
-    
-  } catch (error) {
-    console.error('❌ Ошибка получения водителей:', error);
-    return NextResponse.json(
-      { error: 'Ошибка сервера при получении водителей' },
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
-  }
-}
 
-// Создать нового водителя
-export async function POST(request: NextRequest) {
-  try {
-    const { 
-      name, 
-      phone, 
-      login, 
-      license_number, 
-      pin_code,
-      district_ids = [],
-      vehicle_ids = []
-    } = await request.json();
-    
-    if (!name || !login || !pin_code) {
-      return NextResponse.json(
-        { error: 'Имя, логин и PIN-код обязательны' },
-        { status: 400 }
-      );
-    }
-    
-    // Проверяем уникальность логина
-    const existingDriver = await prisma.driver.findFirst({
-      where: { login }
-    });
-    
-    if (existingDriver) {
-      return NextResponse.json(
-        { error: 'Водитель с таким логином уже существует' },
-        { status: 400 }
-      );
-    }
-    
-    // Создаем водителя
-    const driver = await prisma.driver.create({
-      data: {
-        name,
-        phone,
-        login,
-        license_number,
-        pin_code,
-        is_active: true,
-        status: 'offline'
-      }
-    });
-    
-    // Назначаем районы
-    if (district_ids.length > 0) {
-      await prisma.driverDistrict.createMany({
-        data: district_ids.map((district_id: string) => ({
-          driver_id: driver.id,
-          district_id: BigInt(district_id),
-          is_active: true
-        }))
-      });
-    }
-    
-    // Назначаем машины
-    if (vehicle_ids.length > 0) {
-      await prisma.driverVehicle.createMany({
-        data: vehicle_ids.map((vehicle_id: string, index: number) => ({
-          driver_id: driver.id,
-          vehicle_id: BigInt(vehicle_id),
-          is_active: true,
-          is_primary: index === 0 // Первая машина - основная
-        }))
-      });
-    }
-    
-    console.log(`✅ Создан водитель: ${driver.name} (ID: ${driver.id})`);
-    
-    return NextResponse.json({
-      success: true,
-      driver: {
-        id: driver.id.toString(),
-        name: driver.name,
-        phone: driver.phone,
-        login: driver.login,
-        license_number: driver.license_number,
-        status: driver.status
-      },
-      message: `Водитель ${driver.name} успешно создан`
-    });
-    
   } catch (error) {
-    console.error('❌ Ошибка создания водителя:', error);
+    console.error('Ошибка получения водителей:', error);
     return NextResponse.json(
-      { error: 'Ошибка сервера при создании водителя' },
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-// Обновить данные водителя
-export async function PATCH(request: NextRequest) {
-  try {
-    const { 
-      driver_id,
-      name,
-      phone,
-      license_number,
-      pin_code,
-      is_active,
-      status,
-      district_ids,
-      vehicle_ids
-    } = await request.json();
-    
-    if (!driver_id) {
-      return NextResponse.json(
-        { error: 'ID водителя обязателен' },
-        { status: 400 }
-      );
-    }
-    
-    // Обновляем основные данные водителя
-    const updateData: any = {};
-    if (name !== undefined) updateData.name = name;
-    if (phone !== undefined) updateData.phone = phone;
-    if (license_number !== undefined) updateData.license_number = license_number;
-    if (pin_code !== undefined) updateData.pin_code = pin_code;
-    if (is_active !== undefined) updateData.is_active = is_active;
-    if (status !== undefined) updateData.status = status;
-    
-    const driver = await prisma.driver.update({
-      where: { id: BigInt(driver_id) },
-      data: updateData
-    });
-    
-    // Обновляем районы если переданы
-    if (district_ids !== undefined) {
-      // Удаляем старые назначения
-      await prisma.driverDistrict.deleteMany({
-        where: { driver_id: BigInt(driver_id) }
-      });
-      
-      // Создаем новые назначения
-      if (district_ids.length > 0) {
-        await prisma.driverDistrict.createMany({
-          data: district_ids.map((district_id: string) => ({
-            driver_id: BigInt(driver_id),
-            district_id: BigInt(district_id),
-            is_active: true
-          }))
-        });
-      }
-    }
-    
-    // Обновляем машины если переданы
-    if (vehicle_ids !== undefined) {
-      // Удаляем старые назначения
-      await prisma.driverVehicle.deleteMany({
-        where: { driver_id: BigInt(driver_id) }
-      });
-      
-      // Создаем новые назначения
-      if (vehicle_ids.length > 0) {
-        await prisma.driverVehicle.createMany({
-          data: vehicle_ids.map((vehicle_id: string, index: number) => ({
-            driver_id: BigInt(driver_id),
-            vehicle_id: BigInt(vehicle_id),
-            is_active: true,
-            is_primary: index === 0
-          }))
-        });
-      }
-    }
-    
-    console.log(`✅ Обновлен водитель: ${driver.name} (ID: ${driver.id})`);
-    
-    return NextResponse.json({
-      success: true,
-      message: `Данные водителя ${driver.name} обновлены`
-    });
-    
-  } catch (error) {
-    console.error('❌ Ошибка обновления водителя:', error);
-    return NextResponse.json(
-      { error: 'Ошибка сервера при обновлении водителя' },
+      { error: 'Внутренняя ошибка сервера' },
       { status: 500 }
     );
   } finally {

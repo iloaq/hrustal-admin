@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     });
     
     // Преобразуем данные для фронтенда
-    const formattedAssignments = assignments.map(assignment => {
+    const formattedAssignments = assignments.map((assignment: any) => {
       const lead = assignment.lead;
       const info = lead.info as any;
       
@@ -107,10 +107,10 @@ export async function GET(request: NextRequest) {
     // Статистика
     const stats = {
       total: assignments.length,
-      assigned: assignments.filter(a => a.status === 'assigned').length,
-      started: assignments.filter(a => a.status === 'started').length,
-      delivered: assignments.filter(a => a.status === 'delivered').length,
-      broken: assignments.filter(a => a.status === 'broken').length
+      assigned: assignments.filter((a: any) => a.status === 'assigned').length,
+      started: assignments.filter((a: any) => a.status === 'started').length,
+      delivered: assignments.filter((a: any) => a.status === 'delivered').length,
+      broken: assignments.filter((a: any) => a.status === 'broken').length
     };
     
     return NextResponse.json({
