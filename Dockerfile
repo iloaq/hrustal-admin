@@ -15,6 +15,26 @@ RUN npm ci
 # Копируем исходный код
 COPY . .
 
+# Проверяем, что все файлы скопированы
+RUN echo "=== Проверяем структуру src ==="
+RUN ls -la /app/src/
+RUN echo "=== Проверяем компоненты ==="
+RUN ls -la /app/src/components/
+RUN echo "=== Проверяем NotificationService ==="
+RUN ls -la /app/src/components/NotificationService.tsx || echo "NotificationService.tsx не найден"
+RUN echo "=== Проверяем содержимое NotificationService ==="
+RUN head -5 /app/src/components/NotificationService.tsx || echo "Не удалось прочитать файл"
+RUN echo "=== Проверяем импорт в driver/page.tsx ==="
+RUN grep -n "NotificationService" /app/src/app/driver/page.tsx || echo "Импорт не найден"
+RUN echo "=== Проверяем структуру app ==="
+RUN ls -la /app/src/app/driver/ || echo "driver не найден"
+RUN echo "=== Проверяем файл driver/page.tsx ==="
+RUN ls -la /app/src/app/driver/page.tsx || echo "page.tsx не найден"
+RUN echo "=== Проверяем содержимое driver/page.tsx ==="
+RUN head -10 /app/src/app/driver/page.tsx || echo "Не удалось прочитать файл"
+RUN echo "=== Проверяем все файлы в src ==="
+RUN find /app/src -name "*.tsx" -o -name "*.ts" | head -20 || echo "Файлы не найдены"
+
 # Генерируем Prisma клиент
 RUN npx prisma generate
 
@@ -23,6 +43,8 @@ RUN echo "=== Проверяем структуру src/generated ==="
 RUN ls -la /app/src/generated/
 RUN echo "=== Проверяем содержимое src/generated/prisma ==="
 RUN ls -la /app/src/generated/prisma/
+RUN echo "=== Проверяем компоненты ==="
+RUN ls -la /app/src/components/ || echo "components не найден"
 
 # Собираем приложение
 RUN npm run build
@@ -47,11 +69,25 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/src/generated ./src/generated
+COPY --from=builder /app/src ./src
 
 # Проверяем, что файлы на месте
 RUN echo "=== Проверяем структуру в production образе ==="
-RUN ls -la /app/src/generated/prisma/
+RUN ls -la /app/src/
+RUN echo "=== Проверяем компоненты ==="
+RUN ls -la /app/src/components/ || echo "components не найден"
+RUN echo "=== Проверяем NotificationService ==="
+RUN ls -la /app/src/components/NotificationService.tsx || echo "NotificationService.tsx не найден"
+RUN echo "=== Проверяем содержимое NotificationService ==="
+RUN head -5 /app/src/components/NotificationService.tsx || echo "Не удалось прочитать файл"
+RUN echo "=== Проверяем импорт в driver/page.tsx ==="
+RUN grep -n "NotificationService" /app/src/app/driver/page.tsx || echo "Импорт не найден"
+RUN echo "=== Проверяем структуру app ==="
+RUN ls -la /app/src/app/driver/ || echo "driver не найден"
+RUN echo "=== Проверяем файл driver/page.tsx ==="
+RUN ls -la /app/src/app/driver/page.tsx || echo "page.tsx не найден"
+RUN echo "=== Проверяем содержимое driver/page.tsx ==="
+RUN head -10 /app/src/app/driver/page.tsx || echo "Не удалось прочитать файл"
 RUN echo "=== Проверяем server.js ==="
 RUN ls -la /app/server.js || echo "server.js не найден"
 RUN ls -la /app/.next/standalone/server.js || echo "standalone/server.js не найден"
