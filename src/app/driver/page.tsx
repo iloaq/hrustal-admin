@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import NotificationService from '@/components/NotificationService';
+import NotificationService from '../../components/NotificationService';
 
 interface Driver {
   id: string;
