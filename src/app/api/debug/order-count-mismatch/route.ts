@@ -16,17 +16,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Маппинг водителей к районам (из orders API)
-    const driverRegionMapping: Record<string, string[]> = {
-      '10': ['Центр'],           // Машина 1
-      '9': ['Вокзал'],           // Машина 2
-      '13': ['Центр П/З'],       // Машина 3
-      '12': ['Вокзал П/З'],      // Машина 4
-      '8': ['Машина 5'],         // Машина 5 (универсальная)
-      '11': ['Машина 6']         // Машина 6 (иные районы)
+    // Маппинг водителей к машинам (новая логика)
+    const driverTruckMapping: Record<string, string> = {
+      '10': 'Машина 1',          // Водитель 10 -> Машина 1
+      '9': 'Машина 2',           // Водитель 9 -> Машина 2
+      '13': 'Машина 3',          // Водитель 13 -> Машина 3
+      '12': 'Машина 4',          // Водитель 12 -> Машина 4
+      '8': 'Машина 5',           // Водитель 8 -> Машина 5 (универсальная)
+      '11': 'Машина 6'           // Водитель 11 -> Машина 6 (иные районы)
     };
 
-    const driverRegions = driverRegionMapping[driver_id] || [];
+    const driverTruck = driverTruckMapping[driver_id] || null;
+    
+    // Маппинг машин к районам (для обратной совместимости)
+    const truckRegionMapping: Record<string, string[]> = {
+      'Машина 1': ['Центр'],
+      'Машина 2': ['Вокзал'],
+      'Машина 3': ['Центр П/З'],
+      'Машина 4': ['Вокзал П/З'],
+      'Машина 5': ['Машина 5'],
+      'Машина 6': ['Машина 6']
+    };
+    
+    const driverRegions = driverTruck ? truckRegionMapping[driverTruck] || [] : [];
 
     // Получаем все leads за указанную дату
     const allLeads = await prisma.lead.findMany({
@@ -50,6 +62,7 @@ export async function GET(request: NextRequest) {
     // Анализируем заказы
     const analysis = {
       total_leads: allLeads.length,
+      driver_truck: driverTruck,
       driver_regions: driverRegions,
       leads_by_region: {} as Record<string, any[]>,
       leads_by_truck: {} as Record<string, any[]>,
@@ -91,22 +104,26 @@ export async function GET(request: NextRequest) {
       analysis.leads_by_status[status].push(lead);
     });
 
-    // Определяем, какие заказы видит водитель
+    // Определяем, какие заказы видит водитель (новая логика - по назначенной машине)
     allLeads.forEach((lead: any) => {
       const info = typeof lead.info === 'string' ? JSON.parse(lead.info) : lead.info;
-      const hasRegion = driverRegions.includes(info?.region);
-      
       const assignment = getLatestAssignment(lead.truck_assignments);
+      const assignedTruck = assignment?.truck_name;
+      
+      // Проверяем, назначен ли заказ на машину водителя
+      const isAssignedToDriverTruck = driverTruck && assignedTruck === driverTruck;
+      
+      // Исключаем заказы со статусом 'completed' или 'cancelled'
       const isCompleted = assignment?.status === 'completed' || assignment?.status === 'cancelled';
       
       const leadInfo = {
         lead_id: lead.lead_id.toString(),
         region: info?.region,
-        truck: assignment?.truck_name,
+        truck: assignedTruck,
         status: assignment?.status,
-        hasRegion,
+        isAssignedToDriverTruck,
         isCompleted,
-        visible: hasRegion && !isCompleted
+        visible: isAssignedToDriverTruck && !isCompleted
       };
 
       if (leadInfo.visible) {

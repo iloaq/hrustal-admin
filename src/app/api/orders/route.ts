@@ -11,24 +11,24 @@ function getLatestAssignment(truckAssignments: any[]) {
     .sort((a: any, b: any) => new Date(b.assigned_at).getTime() - new Date(a.assigned_at).getTime())[0];
 }
 
-// Функция для получения районов, назначенных водителю
-async function getDriverRegions(driverId: bigint, date?: string | null): Promise<string[]> {
+// Функция для получения машины, назначенной водителю
+async function getDriverTruck(driverId: bigint): Promise<string | null> {
   try {
-    // Маппинг водителей к районам
-    const driverRegionMapping: Record<string, string[]> = {
-      '10': ['Центр'],           // Машина 1
-      '9': ['Вокзал'],           // Машина 2
-      '13': ['Центр П/З'],       // Машина 3
-      '12': ['Вокзал П/З'],      // Машина 4
-      '8': ['Машина 5'],         // Машина 5 (универсальная)
-      '11': ['Машина 6']         // Машина 6 (иные районы)
+    // Маппинг водителей к машинам
+    const driverTruckMapping: Record<string, string> = {
+      '10': 'Машина 1',          // Водитель 10 -> Машина 1
+      '9': 'Машина 2',           // Водитель 9 -> Машина 2
+      '13': 'Машина 3',          // Водитель 13 -> Машина 3
+      '12': 'Машина 4',          // Водитель 12 -> Машина 4
+      '8': 'Машина 5',           // Водитель 8 -> Машина 5 (универсальная)
+      '11': 'Машина 6'           // Водитель 11 -> Машина 6 (иные районы)
     };
     
-    return driverRegionMapping[driverId.toString()] || [];
+    return driverTruckMapping[driverId.toString()] || null;
 
   } catch (error) {
-    console.error('Ошибка получения районов водителя:', error);
-    return [];
+    console.error('Ошибка получения машины водителя:', error);
+    return null;
   }
 }
 
@@ -41,14 +41,26 @@ export async function GET(request: NextRequest) {
     const regions_only = searchParams.get('regions_only');
 
     if (driver_id) {
-      // Получаем районы, назначенные водителю
-      const driverRegions = await getDriverRegions(BigInt(driver_id), date);
+      // Получаем машину, назначенную водителю
+      const driverTruck = await getDriverTruck(BigInt(driver_id));
       
-      // Если запрашиваются только районы
+      // Если запрашиваются только районы (для обратной совместимости)
       if (regions_only === 'true') {
+        // Возвращаем районы на основе машины (для обратной совместимости)
+        const truckRegionMapping: Record<string, string[]> = {
+          'Машина 1': ['Центр'],
+          'Машина 2': ['Вокзал'],
+          'Машина 3': ['Центр П/З'],
+          'Машина 4': ['Вокзал П/З'],
+          'Машина 5': ['Машина 5'],
+          'Машина 6': ['Машина 6']
+        };
+        const regions = driverTruck ? truckRegionMapping[driverTruck] || [] : [];
+        
         return NextResponse.json({
           success: true,
-          regions: driverRegions
+          regions: regions,
+          truck: driverTruck
         });
       }
       
@@ -64,18 +76,22 @@ export async function GET(request: NextRequest) {
         ]
       });
 
-      // Фильтруем по районам водителя и исключаем завершенные заказы
+      // Фильтруем по назначенной машине водителя и исключаем завершенные заказы
       const filteredLeads = allLeads.filter((lead: any) => {
-        const info = typeof lead.info === 'string' ? JSON.parse(lead.info) : lead.info;
-        const hasRegion = driverRegions.includes(info?.region);
+        // Получаем последнее назначение машины для этого заказа
+        const assignment = getLatestAssignment(lead.truck_assignments);
+        const assignedTruck = assignment?.truck_name;
+        
+        // Проверяем, назначен ли заказ на машину водителя
+        const isAssignedToDriverTruck = driverTruck && assignedTruck === driverTruck;
         
         // Исключаем заказы со статусом 'completed' или 'cancelled'
-        const assignment = getLatestAssignment(lead.truck_assignments);
         const isCompleted = assignment?.status === 'completed' || assignment?.status === 'cancelled';
         
-        console.log(`🔍 Заказ ${lead.lead_id}: район=${info?.region}, hasRegion=${hasRegion}, status=${assignment?.status}, isCompleted=${isCompleted}`);
+        const info = typeof lead.info === 'string' ? JSON.parse(lead.info) : lead.info;
+        console.log(`🔍 Заказ ${lead.lead_id}: район=${info?.region}, назначенная_машина=${assignedTruck}, машина_водителя=${driverTruck}, isAssignedToDriverTruck=${isAssignedToDriverTruck}, status=${assignment?.status}, isCompleted=${isCompleted}`);
         
-        return hasRegion && !isCompleted;
+        return isAssignedToDriverTruck && !isCompleted;
       });
 
       // Конвертируем leads в формат orders

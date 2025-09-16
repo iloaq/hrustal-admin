@@ -98,8 +98,8 @@ export default function DebugOrderCountPage() {
                   <div className="text-sm text-gray-600">Скрыто от водителя</div>
                 </div>
                 <div className="bg-purple-50 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">{analysis.driver_regions.join(', ')}</div>
-                  <div className="text-sm text-gray-600">Районы водителя</div>
+                  <div className="text-2xl font-bold text-purple-600">{analysis.driver_truck || 'Не назначено'}</div>
+                  <div className="text-sm text-gray-600">Машина водителя</div>
                 </div>
               </div>
             </div>
@@ -158,7 +158,7 @@ export default function DebugOrderCountPage() {
                           </div>
                         </div>
                         <div className="text-sm">
-                          {!lead.hasRegion && <span className="text-red-600">❌ Не его район</span>}
+                          {!lead.isAssignedToDriverTruck && <span className="text-red-600">❌ Не его машина</span>}
                           {lead.isCompleted && <span className="text-orange-600">⏹️ Завершен</span>}
                         </div>
                       </div>
