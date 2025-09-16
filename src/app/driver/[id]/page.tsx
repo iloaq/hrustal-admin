@@ -37,6 +37,7 @@ export default function DriverPage({ params }: { params: Promise<{ id: string }>
   const [loading, setLoading] = useState(true);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [timeFilter, setTimeFilter] = useState<'all' | 'morning' | 'day' | 'evening'>('all');
 
   useEffect(() => {
     loadDriverData();
@@ -183,7 +184,7 @@ export default function DriverPage({ params }: { params: Promise<{ id: string }>
   };
 
   const acceptAllOrders = async () => {
-    const assignedOrders = orders.filter(order => order.status === 'assigned');
+    const assignedOrders = filteredOrders.filter(order => order.status === 'assigned');
     
     if (assignedOrders.length === 0) {
       showNotification('Нет заказов', 'Нет заказов для принятия');
@@ -232,6 +233,28 @@ export default function DriverPage({ params }: { params: Promise<{ id: string }>
     );
   };
 
+  // Функция для фильтрации заказов по времени
+  const getTimePeriod = (timeString: string): 'morning' | 'day' | 'evening' => {
+    if (!timeString) return 'day';
+    
+    // Извлекаем время из строки (например, "09:00-18:00" или "09:00")
+    const timeMatch = timeString.match(/(\d{1,2}):(\d{2})/);
+    if (!timeMatch) return 'day';
+    
+    const hour = parseInt(timeMatch[1]);
+    
+    if (hour >= 6 && hour < 12) return 'morning';
+    if (hour >= 12 && hour < 18) return 'day';
+    return 'evening';
+  };
+
+  // Фильтруем заказы по времени
+  const filteredOrders = orders.filter(order => {
+    if (timeFilter === 'all') return true;
+    const timePeriod = getTimePeriod(order.delivery_time || '');
+    return timePeriod === timeFilter;
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -257,12 +280,12 @@ export default function DriverPage({ params }: { params: Promise<{ id: string }>
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              {orders.filter(o => o.status === 'assigned').length > 0 && (
+              {filteredOrders.filter(o => o.status === 'assigned').length > 0 && (
                 <button
                   onClick={acceptAllOrders}
                   className="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm flex-1 sm:flex-none"
                 >
-                  ✅ Принять все ({orders.filter(o => o.status === 'assigned').length})
+                  ✅ Принять все ({filteredOrders.filter(o => o.status === 'assigned').length})
                 </button>
               )}
               <button
@@ -281,24 +304,31 @@ export default function DriverPage({ params }: { params: Promise<{ id: string }>
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
-            <div className="text-xl sm:text-2xl font-bold text-gray-900">{orders.length}</div>
-            <div className="text-gray-600 text-sm sm:text-base">Всего заказов</div>
+            <div className="text-xl sm:text-2xl font-bold text-gray-900">{filteredOrders.length}</div>
+            <div className="text-gray-600 text-sm sm:text-base">
+              {timeFilter === 'all' ? 'Всего заказов' : 'Показано заказов'}
+            </div>
+            {timeFilter !== 'all' && (
+              <div className="text-xs text-gray-500 mt-1">
+                из {orders.length} всего
+              </div>
+            )}
           </div>
           <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
             <div className="text-xl sm:text-2xl font-bold text-yellow-600">
-              {orders.filter(o => o.status === 'assigned').length}
+              {filteredOrders.filter(o => o.status === 'assigned').length}
             </div>
             <div className="text-gray-600 text-sm sm:text-base">Ожидают принятия</div>
           </div>
           <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
             <div className="text-xl sm:text-2xl font-bold text-orange-600">
-              {orders.filter(o => o.status === 'in_progress').length}
+              {filteredOrders.filter(o => o.status === 'in_progress').length}
             </div>
             <div className="text-gray-600 text-sm sm:text-base">В пути</div>
           </div>
           <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
             <div className="text-xl sm:text-2xl font-bold text-green-600">
-              {orders.filter(o => o.status === 'completed').length}
+              {filteredOrders.filter(o => o.status === 'completed').length}
             </div>
             <div className="text-gray-600 text-sm sm:text-base">Завершено</div>
           </div>
@@ -325,6 +355,55 @@ export default function DriverPage({ params }: { params: Promise<{ id: string }>
           </div>
         )}
 
+        {/* Time Filter */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Фильтр по времени
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setTimeFilter('all')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                timeFilter === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              🌅 Все время
+            </button>
+            <button
+              onClick={() => setTimeFilter('morning')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                timeFilter === 'morning'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              🌅 Утро (6:00-12:00)
+            </button>
+            <button
+              onClick={() => setTimeFilter('day')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                timeFilter === 'day'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              ☀️ День (12:00-18:00)
+            </button>
+            <button
+              onClick={() => setTimeFilter('evening')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                timeFilter === 'evening'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              🌆 Вечер (18:00-6:00)
+            </button>
+          </div>
+        </div>
+
         {/* Orders List */}
         <div className="space-y-3 sm:space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -337,14 +416,21 @@ export default function DriverPage({ params }: { params: Promise<{ id: string }>
             Показываются заказы по назначенным районам и напрямую назначенные вам
           </p>
           
-          {orders.length === 0 ? (
+          {filteredOrders.length === 0 ? (
             <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
               <div className="text-gray-400 text-6xl mb-4">📦</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Нет заказов</h3>
-              <p className="text-gray-600">Заказы появятся здесь автоматически</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {orders.length === 0 ? 'Нет заказов' : 'Нет заказов по фильтру'}
+              </h3>
+              <p className="text-gray-600">
+                {orders.length === 0 
+                  ? 'Заказы появятся здесь автоматически' 
+                  : `Всего заказов: ${orders.length}, показано: ${filteredOrders.length}`
+                }
+              </p>
             </div>
           ) : (
-            orders.map((order) => (
+            filteredOrders.map((order) => (
               <div key={order.id} className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 gap-3">
                   <div className="flex-1">

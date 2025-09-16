@@ -110,6 +110,94 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Проверка токена водителя
+export async function GET(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Токен не предоставлен' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      
+      const driver = await prisma.driver.findUnique({
+        where: { id: BigInt(decoded.driverId) },
+        include: {
+          driver_districts: {
+            where: { is_active: true },
+            include: {
+              district: true
+            }
+          },
+          driver_vehicles: {
+            where: { is_active: true },
+            include: {
+              vehicle: true
+            }
+          }
+        }
+      });
+
+      if (!driver) {
+        return NextResponse.json(
+          { error: 'Водитель не найден' },
+          { status: 404 }
+        );
+      }
+
+      const driverData = {
+        id: driver.id.toString(),
+        name: driver.name,
+        phone: driver.phone,
+        login: driver.login,
+        license_number: driver.license_number,
+        status: driver.status,
+        districts: driver.driver_districts.map((dd: any) => ({
+          id: dd.district.id.toString(),
+          name: dd.district.name,
+          description: dd.district.description
+        })),
+        vehicles: driver.driver_vehicles.map((dv: any) => ({
+          id: dv.vehicle.id.toString(),
+          name: dv.vehicle.name,
+          brand: dv.vehicle.brand,
+          license_plate: dv.vehicle.license_plate,
+          capacity: dv.vehicle.capacity,
+          is_primary: dv.is_primary,
+          is_active: dv.vehicle.is_active
+        }))
+      };
+
+      return NextResponse.json({
+        success: true,
+        driver: driverData
+      });
+
+    } catch (jwtError) {
+      return NextResponse.json(
+        { error: 'Недействительный токен' },
+        { status: 401 }
+      );
+    }
+
+  } catch (error) {
+    console.error('❌ Ошибка проверки токена:', error);
+    return NextResponse.json(
+      { error: 'Внутренняя ошибка сервера' },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
 // Выход водителя из системы
 export async function DELETE(request: NextRequest) {
   try {

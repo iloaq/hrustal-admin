@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
           customer_address: info?.delivery_address || '',
           region: info?.region || '',
           products: typeof lead.products === 'string' ? JSON.parse(lead.products) : lead.products || {},
-          total_amount: lead.price || 0,
+          total_amount: info?.price ? parseFloat(info.price) : 0,
           delivery_date: lead.delivery_date,
           delivery_time: lead.delivery_time || '09:00-18:00',
           status: lead.truck_assignments.length > 0 ? 'assigned' : 'pending',
@@ -92,12 +92,12 @@ export async function GET(request: NextRequest) {
             license_plate: 'А001АА77'
           },
           assigned_at: lead.truck_assignments[0]?.assigned_at || lead.created_at,
-          accepted_at: null,
-          started_at: null,
-          completed_at: null,
-          cancelled_at: null,
-          cancellation_reason: null,
-          driver_notes: null
+          accepted_at: lead.truck_assignments[0]?.accepted_at || null,
+          started_at: lead.truck_assignments[0]?.started_at || null,
+          completed_at: lead.truck_assignments[0]?.completed_at || null,
+          cancelled_at: lead.truck_assignments[0]?.cancelled_at || null,
+          cancellation_reason: lead.truck_assignments[0]?.cancellation_reason || null,
+          driver_notes: lead.truck_assignments[0]?.driver_notes || null
         };
       });
 
@@ -201,11 +201,11 @@ export async function POST(request: NextRequest) {
         name: customer_name,
         delivery_date: new Date(delivery_date),
         products: products || {},
-        price: total_amount?.toString() || '0',
         info: {
           name: customer_name,
           region: region,
-          delivery_address: data.customer_address || ''
+          delivery_address: data.customer_address || '',
+          price: total_amount?.toString() || '0'
         },
         delivery_time: data.delivery_time || '09:00-18:00',
         created_at: new Date(),
