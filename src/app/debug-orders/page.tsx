@@ -27,6 +27,27 @@ export default function DebugOrdersPage() {
     }
   };
 
+  const createTestData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/test-data/time-orders', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        console.log('✅ Тестовые данные созданы:', data);
+        await loadOrders(); // Перезагружаем заказы
+      } else {
+        console.error('Ошибка создания тестовых данных:', data);
+      }
+    } catch (error) {
+      console.error('Ошибка создания тестовых данных:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getTimePeriod = (timeString: string): 'morning' | 'day' | 'evening' => {
     if (!timeString) return 'day';
     
@@ -69,13 +90,20 @@ export default function DebugOrdersPage() {
                 className="border rounded px-3 py-2"
               />
             </div>
-            <div className="flex items-end">
+            <div className="flex items-end gap-2">
               <button
                 onClick={loadOrders}
                 disabled={loading}
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
               >
                 {loading ? 'Загрузка...' : 'Обновить'}
+              </button>
+              <button
+                onClick={createTestData}
+                disabled={loading}
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+              >
+                {loading ? 'Создание...' : 'Создать тестовые данные'}
               </button>
             </div>
           </div>

@@ -26,7 +26,7 @@ interface Order {
   products: any;
   total_amount: number;
   delivery_date: string;
-  delivery_time: string;
+  delivery_time: string | null;
   status: string;
   driver_notes: string | null;
   assigned_at: string | null;
@@ -170,7 +170,7 @@ export default function DriverPage() {
   };
 
   // Функция для фильтрации заказов по времени
-  const getTimePeriod = (timeString: string): 'morning' | 'day' | 'evening' => {
+  const getTimePeriod = (timeString: string | null): 'morning' | 'day' | 'evening' => {
     if (!timeString) {
       console.log('🔍 Время не указано, считаем днем');
       return 'day';
@@ -178,32 +178,47 @@ export default function DriverPage() {
     
     console.log('🔍 Анализируем время:', timeString);
     
-    // Извлекаем время из строки (например, "09:00-18:00" или "09:00")
-    const timeMatch = timeString.match(/(\d{1,2}):(\d{2})/);
-    if (!timeMatch) {
-      console.log('🔍 Не удалось извлечь время, считаем днем');
-      return 'day';
-    }
-    
-    const hour = parseInt(timeMatch[1]);
-    console.log('🔍 Извлеченный час:', hour);
-    
-    if (hour >= 6 && hour < 12) {
-      console.log('🌅 Определено как УТРО');
+    // Проверяем текстовые значения
+    const lowerTime = timeString.toLowerCase();
+    if (lowerTime.includes('утро') || lowerTime.includes('morning')) {
+      console.log('🌅 Определено как УТРО (текст)');
       return 'morning';
     }
-    if (hour >= 12 && hour < 18) {
-      console.log('☀️ Определено как ДЕНЬ');
+    if (lowerTime.includes('день') || lowerTime.includes('day')) {
+      console.log('☀️ Определено как ДЕНЬ (текст)');
       return 'day';
     }
-    console.log('🌆 Определено как ВЕЧЕР');
-    return 'evening';
+    if (lowerTime.includes('вечер') || lowerTime.includes('evening')) {
+      console.log('🌆 Определено как ВЕЧЕР (текст)');
+      return 'evening';
+    }
+    
+    // Если это временной интервал, извлекаем час
+    const timeMatch = timeString.match(/(\d{1,2}):(\d{2})/);
+    if (timeMatch) {
+      const hour = parseInt(timeMatch[1]);
+      console.log('🔍 Извлеченный час:', hour);
+      
+      if (hour >= 6 && hour < 12) {
+        console.log('🌅 Определено как УТРО (час)');
+        return 'morning';
+      }
+      if (hour >= 12 && hour < 18) {
+        console.log('☀️ Определено как ДЕНЬ (час)');
+        return 'day';
+      }
+      console.log('🌆 Определено как ВЕЧЕР (час)');
+      return 'evening';
+    }
+    
+    console.log('🔍 Не удалось определить время, считаем днем');
+    return 'day';
   };
 
   // Фильтруем заказы по времени
   const filteredOrders = orders.filter(order => {
     if (timeFilter === 'all') return true;
-    const timePeriod = getTimePeriod(order.delivery_time || '');
+    const timePeriod = getTimePeriod(order.delivery_time);
     const matches = timePeriod === timeFilter;
     console.log(`🔍 Заказ ${order.customer_name}: время "${order.delivery_time}" → ${timePeriod}, фильтр: ${timeFilter}, совпадает: ${matches}`);
     return matches;
@@ -370,7 +385,7 @@ export default function DriverPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              🌅 Утро (6:00-12:00) ({orders.filter(o => getTimePeriod(o.delivery_time || '') === 'morning').length})
+              🌅 Утро (6:00-12:00) ({orders.filter(o => getTimePeriod(o.delivery_time) === 'morning').length})
             </button>
             <button
               onClick={() => setTimeFilter('day')}
@@ -380,7 +395,7 @@ export default function DriverPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ☀️ День (12:00-18:00) ({orders.filter(o => getTimePeriod(o.delivery_time || '') === 'day').length})
+              ☀️ День (12:00-18:00) ({orders.filter(o => getTimePeriod(o.delivery_time) === 'day').length})
             </button>
             <button
               onClick={() => setTimeFilter('evening')}
@@ -390,7 +405,7 @@ export default function DriverPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              🌆 Вечер (18:00-6:00) ({orders.filter(o => getTimePeriod(o.delivery_time || '') === 'evening').length})
+              🌆 Вечер (18:00-6:00) ({orders.filter(o => getTimePeriod(o.delivery_time) === 'evening').length})
             </button>
           </div>
         </div>
@@ -421,9 +436,9 @@ export default function DriverPage() {
                     <p className="text-gray-600">
                       🕐 Время: {order.delivery_time || 'Не указано'} 
                       <span className="ml-2 text-xs bg-gray-100 px-2 py-1 rounded">
-                        {getTimePeriod(order.delivery_time || '') === 'morning' ? '🌅 УТРО' :
-                         getTimePeriod(order.delivery_time || '') === 'day' ? '☀️ ДЕНЬ' :
-                         getTimePeriod(order.delivery_time || '') === 'evening' ? '🌆 ВЕЧЕР' : '❓'}
+                        {getTimePeriod(order.delivery_time) === 'morning' ? '🌅 УТРО' :
+                         getTimePeriod(order.delivery_time) === 'day' ? '☀️ ДЕНЬ' :
+                         getTimePeriod(order.delivery_time) === 'evening' ? '🌆 ВЕЧЕР' : '❓'}
                       </span>
                     </p>
                     

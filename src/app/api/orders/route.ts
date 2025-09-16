@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
           products: typeof lead.products === 'string' ? JSON.parse(lead.products) : lead.products || {},
           total_amount: info?.price ? parseFloat(info.price) : 0,
           delivery_date: lead.delivery_date,
-          delivery_time: lead.delivery_time || '09:00-18:00',
+          delivery_time: lead.delivery_time || null,
           status: lead.truck_assignments.length > 0 ? 'assigned' : 'pending',
           driver: {
             id: driver_id,

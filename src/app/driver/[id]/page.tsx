@@ -234,24 +234,38 @@ export default function DriverPage({ params }: { params: Promise<{ id: string }>
   };
 
   // Функция для фильтрации заказов по времени
-  const getTimePeriod = (timeString: string): 'morning' | 'day' | 'evening' => {
+  const getTimePeriod = (timeString: string | null): 'morning' | 'day' | 'evening' => {
     if (!timeString) return 'day';
     
-    // Извлекаем время из строки (например, "09:00-18:00" или "09:00")
+    // Проверяем текстовые значения
+    const lowerTime = timeString.toLowerCase();
+    if (lowerTime.includes('утро') || lowerTime.includes('morning')) {
+      return 'morning';
+    }
+    if (lowerTime.includes('день') || lowerTime.includes('day')) {
+      return 'day';
+    }
+    if (lowerTime.includes('вечер') || lowerTime.includes('evening')) {
+      return 'evening';
+    }
+    
+    // Если это временной интервал, извлекаем час
     const timeMatch = timeString.match(/(\d{1,2}):(\d{2})/);
-    if (!timeMatch) return 'day';
+    if (timeMatch) {
+      const hour = parseInt(timeMatch[1]);
+      
+      if (hour >= 6 && hour < 12) return 'morning';
+      if (hour >= 12 && hour < 18) return 'day';
+      return 'evening';
+    }
     
-    const hour = parseInt(timeMatch[1]);
-    
-    if (hour >= 6 && hour < 12) return 'morning';
-    if (hour >= 12 && hour < 18) return 'day';
-    return 'evening';
+    return 'day';
   };
 
   // Фильтруем заказы по времени
   const filteredOrders = orders.filter(order => {
     if (timeFilter === 'all') return true;
-    const timePeriod = getTimePeriod(order.delivery_time || '');
+    const timePeriod = getTimePeriod(order.delivery_time);
     return timePeriod === timeFilter;
   });
 
