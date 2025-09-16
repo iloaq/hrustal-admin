@@ -19,6 +19,7 @@ interface Order {
   accepted_at: string | null;
   started_at: string | null;
   completed_at: string | null;
+  is_paid?: boolean; // статус оплаты
 }
 
 interface Driver {

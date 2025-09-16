@@ -35,6 +35,7 @@ interface Order {
   completed_at: string | null;
   cancelled_at: string | null;
   cancellation_reason: string | null;
+  is_paid?: boolean; // статус оплаты
   driver: {
     id: string;
     name: string;
@@ -512,6 +513,11 @@ export default function DriverPage() {
                     </p>
                     <p className="text-sm text-gray-600">
                       Дата: {new Date(order.delivery_date).toLocaleDateString()}
+                    </p>
+                    <p className={`text-sm font-medium ${
+                      order.is_paid ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {order.is_paid ? '✅ Оплачено' : '❌ Не оплачено'}
                     </p>
                     {order.driver_notes && (
                       <p className="text-sm text-gray-600">

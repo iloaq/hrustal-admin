@@ -135,7 +135,8 @@ export async function GET(request: NextRequest) {
           completed_at: null,
           cancelled_at: null,
           cancellation_reason: null,
-          driver_notes: getLatestAssignment(lead.truck_assignments)?.notes || null
+          driver_notes: getLatestAssignment(lead.truck_assignments)?.notes || null,
+          is_paid: lead.stat_oplata === 1 // статус оплаты из таблицы leads
         };
       });
 
