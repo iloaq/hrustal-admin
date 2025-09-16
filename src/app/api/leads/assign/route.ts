@@ -154,32 +154,49 @@ export async function PUT(request: Request) {
     });
 
     // Сохраняем назначения в базу данных через TruckAssignment
-    const assignmentPromises = Object.entries(assignments).map(([leadId, truck]: [string, string]) => {
+    const assignmentPromises = Object.entries(assignments).map(async ([leadId, truck]: [string, string]) => {
       const lead = unassignedLeads.find((l: any) => l.lead_id.toString() === leadId);
       if (!lead) return null;
       
-      return prisma.truckAssignment.upsert({
+      // Проверяем существующее назначение
+      const existingAssignment = await prisma.truckAssignment.findUnique({
         where: {
           lead_id_delivery_date: {
             lead_id: BigInt(leadId),
             delivery_date: lead.delivery_date || new Date()
           }
-        },
-        update: {
-          truck_name: truck,
-          delivery_time: lead.delivery_time || '',
-          assigned_at: new Date(),
-          status: 'active'
-        },
-        create: {
-          lead_id: BigInt(leadId),
-          truck_name: truck,
-          delivery_date: lead.delivery_date || new Date(),
-          delivery_time: lead.delivery_time || '',
-          assigned_at: new Date(),
-          status: 'active'
         }
       });
+
+      if (existingAssignment) {
+        // НЕ обновляем, если заказ уже завершен или принят водителем
+        if (existingAssignment.status === 'completed' || existingAssignment.status === 'cancelled' || existingAssignment.status === 'accepted') {
+          console.log(`⚠️ Пропускаем заказ ${leadId} - уже завершен или принят (статус: ${existingAssignment.status})`);
+          return existingAssignment;
+        }
+        // Обновляем только если назначение пустое и не завершено
+        return prisma.truckAssignment.update({
+          where: { id: existingAssignment.id },
+          data: {
+            truck_name: truck,
+            delivery_time: lead.delivery_time || '',
+            assigned_at: new Date()
+            // НЕ обновляем статус - оставляем существующий
+          }
+        });
+      } else {
+        // Создаем новое назначение
+        return prisma.truckAssignment.create({
+          data: {
+            lead_id: BigInt(leadId),
+            truck_name: truck,
+            delivery_date: lead.delivery_date || new Date(),
+            delivery_time: lead.delivery_time || '',
+            assigned_at: new Date(),
+            status: 'active'
+          }
+        });
+      }
     });
 
     await Promise.all(assignmentPromises.filter(Boolean));

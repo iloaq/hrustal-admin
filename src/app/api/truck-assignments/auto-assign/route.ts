@@ -81,9 +81,9 @@ export async function POST(request: Request) {
         if (existingAssignment.truck_name && existingAssignment.truck_name.trim() !== '') {
           return existingAssignment;
         }
-        // НЕ обновляем, если заказ уже завершен
-        if (existingAssignment.status === 'completed' || existingAssignment.status === 'cancelled') {
-          console.log(`⚠️ Пропускаем заказ ${leadId} - уже завершен (статус: ${existingAssignment.status})`);
+        // НЕ обновляем, если заказ уже завершен или принят водителем
+        if (existingAssignment.status === 'completed' || existingAssignment.status === 'cancelled' || existingAssignment.status === 'accepted') {
+          console.log(`⚠️ Пропускаем заказ ${leadId} - уже завершен или принят (статус: ${existingAssignment.status})`);
           return existingAssignment;
         }
         // Обновляем только если назначение пустое и не завершено
