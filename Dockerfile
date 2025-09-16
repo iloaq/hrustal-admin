@@ -18,6 +18,12 @@ COPY . .
 # Проверяем, что все файлы скопированы
 RUN echo "=== Проверяем структуру src ==="
 RUN ls -la /app/src/
+RUN echo "=== Проверяем lib директорию ==="
+RUN ls -la /app/src/lib/ || echo "lib не найден"
+RUN echo "=== Проверяем webhook.ts ==="
+RUN ls -la /app/src/lib/webhook.ts || echo "webhook.ts не найден"
+RUN echo "=== Проверяем содержимое webhook.ts ==="
+RUN head -5 /app/src/lib/webhook.ts || echo "Не удалось прочитать webhook.ts"
 RUN echo "=== Проверяем компоненты ==="
 RUN ls -la /app/src/components/
 RUN echo "=== Проверяем NotificationService ==="
@@ -74,6 +80,12 @@ COPY --from=builder /app/src ./src
 # Проверяем, что файлы на месте
 RUN echo "=== Проверяем структуру в production образе ==="
 RUN ls -la /app/src/
+RUN echo "=== Проверяем lib директорию ==="
+RUN ls -la /app/src/lib/ || echo "lib не найден"
+RUN echo "=== Проверяем webhook.ts ==="
+RUN ls -la /app/src/lib/webhook.ts || echo "webhook.ts не найден"
+RUN echo "=== Проверяем содержимое webhook.ts ==="
+RUN head -5 /app/src/lib/webhook.ts || echo "Не удалось прочитать webhook.ts"
 RUN echo "=== Проверяем компоненты ==="
 RUN ls -la /app/src/components/ || echo "components не найден"
 RUN echo "=== Проверяем NotificationService ==="
