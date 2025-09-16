@@ -2,7 +2,7 @@
 export async function sendN8nWebhook(data: {
   event: string;
   event_type: string; // 'payment' | 'delivery'
-  order_id: string;
+  lead_id: string;
   status: string;
   driver_id?: string;
   driver_name?: string;
@@ -80,7 +80,7 @@ export async function notifyOrderStatusChange(
   const webhookData = {
     event,
     event_type: 'delivery', // Тип события для AmoCRM
-    order_id: orderId,
+    lead_id: orderId,
     status,
     driver_id: driverInfo?.id || '',
     driver_name: driverInfo?.name || '',
@@ -115,7 +115,7 @@ export async function notifyPaymentStatusChange(
   const webhookData = {
     event,
     event_type: 'payment', // Тип события для AmoCRM
-    order_id: orderId,
+    lead_id: orderId,
     status: isPaid ? 'paid' : 'unpaid',
     driver_id: '',
     driver_name: '',
