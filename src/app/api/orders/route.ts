@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
 import { notifyOrderStatusChange } from '../../../lib/webhook';
+import { invalidateCache } from '../leads/cache';
 
 const prisma = new PrismaClient();
 
@@ -191,12 +192,20 @@ export async function PUT(request: NextRequest) {
         data: { dotavleno: true }
       });
       console.log(`✅ Обновлено поле dotavleno=true для заказа ${id} в таблице leads`);
+      
+      // Инвалидируем кэш логистики, чтобы изменения отобразились
+      invalidateCache('leads');
+      console.log(`🔄 Инвалидирован кэш leads для заказа ${id}`);
     } else if (status === 'cancelled') {
       await prisma.lead.update({
         where: { lead_id: BigInt(id) },
         data: { dotavleno: false }
       });
       console.log(`✅ Обновлено поле dotavleno=false для заказа ${id} в таблице leads`);
+      
+      // Инвалидируем кэш логистики, чтобы изменения отобразились
+      invalidateCache('leads');
+      console.log(`🔄 Инвалидирован кэш leads для заказа ${id}`);
     }
 
     // Сначала находим truck_assignment для этого lead_id
