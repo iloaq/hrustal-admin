@@ -501,12 +501,12 @@ export default function DriverPage({ params }: { params: Promise<{ id: string }>
                       {Object.values(order.products).map((item: any, idx: number) => (
                         <div key={idx} className="flex justify-between text-xs sm:text-sm">
                           <span className="flex-1">{item.name} x{item.quantity}</span>
-                          <span className="font-medium ml-2">{item.price * item.quantity} ₽</span>
+                          <span className="font-medium ml-2">{item.price * item.quantity} ₸</span>
                         </div>
                       ))}
                       <div className="pt-2 border-t flex justify-between font-medium text-sm sm:text-base">
                         <span>Итого:</span>
-                        <span>{order.total_amount} ₽</span>
+                        <span>{order.total_amount} ₸</span>
                       </div>
                     </div>
                   ) : (

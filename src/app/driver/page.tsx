@@ -271,13 +271,13 @@ export default function DriverPage() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">🚛 Хрусталь</h1>
-            <p className="text-gray-600">Вход по PIN-коду</p>
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 w-full max-w-md">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">🚛 Хрусталь</h1>
+            <p className="text-sm sm:text-base text-gray-600">Вход по PIN-коду</p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-4 sm:space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 PIN-код
@@ -286,7 +286,7 @@ export default function DriverPage() {
                 type="password"
                 value={pinCode}
                 onChange={(e) => setPinCode(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg tracking-widest"
+                className="w-full px-4 py-3 sm:py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-base sm:text-lg tracking-widest"
                 placeholder="Введите PIN-код"
                 required
                 autoFocus
@@ -302,7 +302,7 @@ export default function DriverPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full bg-blue-600 text-white py-3 sm:py-4 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-base sm:text-lg"
             >
               {loading ? 'Вход...' : 'Войти'}
             </button>
@@ -325,19 +325,20 @@ export default function DriverPage() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">🚛 Хрусталь - Водитель</h1>
-              <p className="text-gray-600">Добро пожаловать, {driver?.name}</p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 space-y-2 sm:space-y-0">
+            <div className="flex-1">
+              <h1 className="text-lg sm:text-2xl font-bold text-gray-900">🚛 Хрусталь - Водитель</h1>
+              <p className="text-sm sm:text-base text-gray-600">Добро пожаловать, {driver?.name}</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-600">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+              <div className="text-xs sm:text-sm text-gray-600">
                 <div>Машина: {driver?.vehicle?.name}</div>
-                <div>Районы: {driver?.districts.join(', ')}</div>
+                <div className="hidden sm:block">Районы: {driver?.districts.join(', ')}</div>
+                <div className="sm:hidden">Районы: {driver?.districts?.slice(0, 2).join(', ')}{driver?.districts && driver.districts.length > 2 ? '...' : ''}</div>
               </div>
               <button
                 onClick={handleLogout}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                className="bg-red-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
               >
                 Выйти
               </button>
@@ -366,46 +367,46 @@ export default function DriverPage() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Фильтр по времени
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
             <button
               onClick={() => setTimeFilter('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                 timeFilter === 'all'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              🌅 Все время ({orders.length})
+              <span className="hidden sm:inline">🌅 </span>Все ({orders.length})
             </button>
             <button
               onClick={() => setTimeFilter('morning')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                 timeFilter === 'morning'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              🌅 Утро (6:00-12:00) ({orders.filter(o => getTimePeriod(o.delivery_time) === 'morning').length})
+              <span className="hidden sm:inline">🌅 </span>Утро ({orders.filter(o => getTimePeriod(o.delivery_time) === 'morning').length})
             </button>
             <button
               onClick={() => setTimeFilter('day')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                 timeFilter === 'day'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              ☀️ День (12:00-18:00) ({orders.filter(o => getTimePeriod(o.delivery_time) === 'day').length})
+              <span className="hidden sm:inline">☀️ </span>День ({orders.filter(o => getTimePeriod(o.delivery_time) === 'day').length})
             </button>
             <button
               onClick={() => setTimeFilter('evening')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                 timeFilter === 'evening'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              🌆 Вечер (18:00-6:00) ({orders.filter(o => getTimePeriod(o.delivery_time) === 'evening').length})
+              <span className="hidden sm:inline">🌆 </span>Вечер ({orders.filter(o => getTimePeriod(o.delivery_time) === 'evening').length})
             </button>
           </div>
         </div>
@@ -427,10 +428,10 @@ export default function DriverPage() {
             </div>
           ) : (
             filteredOrders.map((order) => (
-              <div key={order.id} className="bg-white rounded-lg shadow-sm border p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+              <div key={order.id} className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 space-y-2 sm:space-y-0">
+                  <div className="flex-1">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                       {order.customer_name}
                     </h3>
                     <p className="text-gray-600">
@@ -464,7 +465,7 @@ export default function DriverPage() {
                       </button>
                     </div>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  <div className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
                     order.status === 'assigned' ? 'bg-yellow-100 text-yellow-800' :
                     order.status === 'accepted' ? 'bg-blue-100 text-blue-800' :
                     order.status === 'started' ? 'bg-orange-100 text-orange-800' :
@@ -490,12 +491,12 @@ export default function DriverPage() {
                           {Object.values(order.products).map((item: any, idx: number) => (
                             <div key={idx} className="flex justify-between">
                               <span className="flex-1">{item.name} x{item.quantity}</span>
-                              <span className="font-medium ml-2">{item.price * item.quantity} ₽</span>
+                              <span className="font-medium ml-2">{item.price * item.quantity} ₸</span>
                             </div>
                           ))}
                           <div className="pt-2 border-t flex justify-between font-medium">
                             <span>Итого:</span>
-                            <span>{order.total_amount} ₽</span>
+                            <span>{order.total_amount} ₸</span>
                           </div>
                         </div>
                       ) : 'Нет информации о товарах'}
@@ -507,7 +508,7 @@ export default function DriverPage() {
                       Район: {order.region}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Цена: {order.total_amount} ₽
+                      Цена: {order.total_amount} ₸
                     </p>
                     <p className="text-sm text-gray-600">
                       Дата: {new Date(order.delivery_date).toLocaleDateString()}
@@ -525,7 +526,7 @@ export default function DriverPage() {
                   {order.status === 'assigned' && (
                     <button
                       onClick={() => updateOrderStatus(order.id, 'accepted')}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                      className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 sm:py-3 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base font-medium"
                     >
                       Принять заказ
                     </button>
@@ -533,7 +534,7 @@ export default function DriverPage() {
                   {order.status === 'accepted' && (
                     <button
                       onClick={() => updateOrderStatus(order.id, 'completed')}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                      className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 sm:py-3 rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base font-medium"
                     >
                       Доставлено
                     </button>

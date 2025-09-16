@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         name: lead.name,
         delivery_date: lead.delivery_date,
         delivery_time: lead.delivery_time,
-        truck_assignments: lead.truck_assignments.map(ta => ({
+        truck_assignments: lead.truck_assignments.map((ta: any) => ({
           id: ta.id.toString(),
           status: ta.status,
           truck_name: ta.truck_name,

@@ -31,16 +31,16 @@ export async function POST(request: Request) {
       update: {
         truck_name: truck,
         delivery_time: deliveryTime || lead.delivery_time || '',
-        assigned_at: new Date(),
-        status: 'active'
+        assigned_at: new Date()
+        // НЕ обновляем статус - оставляем существующий
       },
       create: {
         lead_id: BigInt(leadId),
         truck_name: truck,
         delivery_date: lead.delivery_date || new Date(),
         delivery_time: deliveryTime || lead.delivery_time || '',
-        assigned_at: new Date(),
-        status: 'active'
+        assigned_at: new Date()
+        // Статус по умолчанию 'active' из схемы
       }
     });
     

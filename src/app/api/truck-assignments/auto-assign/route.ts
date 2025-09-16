@@ -81,7 +81,12 @@ export async function POST(request: Request) {
         if (existingAssignment.truck_name && existingAssignment.truck_name.trim() !== '') {
           return existingAssignment;
         }
-        // Обновляем только если назначение пустое
+        // НЕ обновляем, если заказ уже завершен
+        if (existingAssignment.status === 'completed' || existingAssignment.status === 'cancelled') {
+          console.log(`⚠️ Пропускаем заказ ${leadId} - уже завершен (статус: ${existingAssignment.status})`);
+          return existingAssignment;
+        }
+        // Обновляем только если назначение пустое и не завершено
         return prisma.truckAssignment.update({
           where: { id: existingAssignment.id },
           data: {

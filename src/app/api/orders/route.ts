@@ -4,6 +4,13 @@ import { notifyOrderStatusChange } from '@/lib/webhook';
 
 const prisma = new PrismaClient();
 
+// Вспомогательная функция для получения последнего назначения
+function getLatestAssignment(truckAssignments: any[]) {
+  if (!truckAssignments || truckAssignments.length === 0) return null;
+  return truckAssignments
+    .sort((a: any, b: any) => new Date(b.assigned_at).getTime() - new Date(a.assigned_at).getTime())[0];
+}
+
 // Функция для получения районов, назначенных водителю
 async function getDriverRegions(driverId: bigint, date?: string | null): Promise<string[]> {
   try {
@@ -57,10 +64,18 @@ export async function GET(request: NextRequest) {
         ]
       });
 
-      // Фильтруем по районам водителя
+      // Фильтруем по районам водителя и исключаем завершенные заказы
       const filteredLeads = allLeads.filter((lead: any) => {
         const info = typeof lead.info === 'string' ? JSON.parse(lead.info) : lead.info;
-        return driverRegions.includes(info?.region);
+        const hasRegion = driverRegions.includes(info?.region);
+        
+        // Исключаем заказы со статусом 'completed' или 'cancelled'
+        const assignment = getLatestAssignment(lead.truck_assignments);
+        const isCompleted = assignment?.status === 'completed' || assignment?.status === 'cancelled';
+        
+        console.log(`🔍 Заказ ${lead.lead_id}: район=${info?.region}, hasRegion=${hasRegion}, status=${assignment?.status}, isCompleted=${isCompleted}`);
+        
+        return hasRegion && !isCompleted;
       });
 
       // Конвертируем leads в формат orders
@@ -77,16 +92,16 @@ export async function GET(request: NextRequest) {
           total_amount: info?.price ? parseFloat(info.price) : 0,
           delivery_date: lead.delivery_date,
           delivery_time: lead.delivery_time || null,
-          status: lead.truck_assignments.length > 0 ? 
-            (() => {
-              const assignment = lead.truck_assignments[0];
-              console.log(`🔍 Заказ ${lead.lead_id}: truck_assignment status = ${assignment?.status}`);
-              if (assignment?.status === 'active') return 'assigned';
-              if (assignment?.status === 'accepted') return 'accepted';
-              if (assignment?.status === 'completed') return 'completed';
-              if (assignment?.status === 'cancelled') return 'cancelled';
-              return assignment?.status || 'assigned';
-            })() : 'pending',
+          status: (() => {
+            const assignment = getLatestAssignment(lead.truck_assignments);
+            console.log(`🔍 Заказ ${lead.lead_id}: truck_assignment status = ${assignment?.status}`);
+            if (!assignment) return 'pending';
+            if (assignment.status === 'active') return 'assigned';
+            if (assignment.status === 'accepted') return 'accepted';
+            if (assignment.status === 'completed') return 'completed';
+            if (assignment.status === 'cancelled') return 'cancelled';
+            return assignment.status || 'assigned';
+          })(),
           driver: {
             id: driver_id,
             name: 'Водитель',
@@ -94,16 +109,16 @@ export async function GET(request: NextRequest) {
           },
           vehicle: {
             id: '22',
-            name: lead.truck_assignments[0]?.truck_name || 'Машина',
+            name: getLatestAssignment(lead.truck_assignments)?.truck_name || 'Машина',
             license_plate: 'А001АА77'
           },
-          assigned_at: lead.truck_assignments[0]?.assigned_at || lead.created_at,
-          accepted_at: lead.truck_assignments[0]?.accepted_at || null,
-          started_at: lead.truck_assignments[0]?.started_at || null,
-          completed_at: lead.truck_assignments[0]?.completed_at || null,
-          cancelled_at: lead.truck_assignments[0]?.cancelled_at || null,
-          cancellation_reason: lead.truck_assignments[0]?.cancellation_reason || null,
-          driver_notes: lead.truck_assignments[0]?.driver_notes || null
+          assigned_at: getLatestAssignment(lead.truck_assignments)?.assigned_at || lead.created_at,
+          accepted_at: null, // Эти поля не существуют в схеме TruckAssignment
+          started_at: null,
+          completed_at: null,
+          cancelled_at: null,
+          cancellation_reason: null,
+          driver_notes: getLatestAssignment(lead.truck_assignments)?.notes || null
         };
       });
 
@@ -157,10 +172,18 @@ export async function PUT(request: NextRequest) {
     const truckAssignment = await prisma.truckAssignment.findFirst({
       where: {
         lead_id: BigInt(id)
+      },
+      orderBy: {
+        assigned_at: 'desc' // Берем последнее назначение
       }
     });
 
-    console.log(`🔍 Найден truck_assignment для заказа ${id}:`, truckAssignment?.id, truckAssignment?.status);
+    console.log(`🔍 Найден truck_assignment для заказа ${id}:`, {
+      id: truckAssignment?.id?.toString(),
+      status: truckAssignment?.status,
+      truck_name: truckAssignment?.truck_name,
+      assigned_at: truckAssignment?.assigned_at
+    });
 
     if (!truckAssignment) {
       return NextResponse.json(
@@ -170,6 +193,7 @@ export async function PUT(request: NextRequest) {
     }
 
     console.log(`📝 Обновляем truck_assignment ${truckAssignment.id} на статус:`, status);
+    console.log(`📝 Данные для обновления:`, updateData);
 
     // Обновляем truck_assignment по его ID
     const updatedAssignment = await prisma.truckAssignment.update({
@@ -180,6 +204,13 @@ export async function PUT(request: NextRequest) {
     });
 
     console.log(`✅ Обновлен truck_assignment ${updatedAssignment.id} со статусом:`, updatedAssignment.status);
+    console.log(`✅ Полные данные обновленного assignment:`, {
+      id: updatedAssignment.id.toString(),
+      status: updatedAssignment.status,
+      notes: updatedAssignment.notes,
+      truck_name: updatedAssignment.truck_name,
+      assigned_at: updatedAssignment.assigned_at
+    });
 
     // Если заказ был обновлен, отправляем webhook в n8n
     if (updatedAssignment) {
@@ -189,7 +220,7 @@ export async function PUT(request: NextRequest) {
           where: { lead_id: BigInt(id) },
           include: {
             truck_assignments: {
-              where: { status: 'active' },
+              where: { id: updatedAssignment.id },
               take: 1
             }
           }

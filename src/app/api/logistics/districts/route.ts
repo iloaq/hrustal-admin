@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     console.log('📊 Найдено районов:', districts.length);
     
     // Сериализуем BigInt поля
-    const serializedDistricts = districts.map(district => ({
+    const serializedDistricts = districts.map((district: any) => ({
       ...district,
       id: Number(district.id).toString(),
       drivers: [], // Пустой массив водителей

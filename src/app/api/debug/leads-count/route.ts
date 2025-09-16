@@ -25,7 +25,7 @@ export async function GET() {
         assignments: assignmentsCount,
         drivers: driversCount
       },
-      recent_leads: recentLeads.map(lead => ({
+      recent_leads: recentLeads.map((lead: any) => ({
         id: lead.lead_id.toString(),
         name: lead.name,
         delivery_date: lead.delivery_date,
