@@ -526,18 +526,10 @@ export default function DriverPage({ params }: { params: Promise<{ id: string }>
                   )}
                   {order.status === 'accepted' && (
                     <button
-                      onClick={() => updateOrderStatus(order.id, 'in_progress')}
-                      className="bg-orange-600 text-white px-4 py-3 rounded-lg hover:bg-orange-700 transition-colors text-sm sm:text-base font-medium"
-                    >
-                      🚚 Начать доставку
-                    </button>
-                  )}
-                  {order.status === 'in_progress' && (
-                    <button
                       onClick={() => updateOrderStatus(order.id, 'completed')}
                       className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base font-medium"
                     >
-                      🎉 Завершить доставку
+                      🎉 Доставлено
                     </button>
                   )}
                 </div>

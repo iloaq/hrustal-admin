@@ -532,18 +532,10 @@ export default function DriverPage() {
                   )}
                   {order.status === 'accepted' && (
                     <button
-                      onClick={() => updateOrderStatus(order.id, 'started')}
-                      className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
-                    >
-                      Начать доставку
-                    </button>
-                  )}
-                  {order.status === 'started' && (
-                    <button
                       onClick={() => updateOrderStatus(order.id, 'completed')}
                       className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                     >
-                      Завершить доставку
+                      Доставлено
                     </button>
                   )}
                 </div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
+import { notifyOrderStatusChange } from '@/lib/webhook';
 
 const prisma = new PrismaClient();
 
@@ -48,11 +49,7 @@ export async function GET(request: NextRequest) {
       const allLeads = await prisma.lead.findMany({
         where: date ? { delivery_date: new Date(date) } : {},
         include: {
-          truck_assignments: {
-            where: {
-              status: 'active'
-            }
-          }
+          truck_assignments: true
         },
         orderBy: [
           { delivery_date: 'asc' },
@@ -80,7 +77,16 @@ export async function GET(request: NextRequest) {
           total_amount: info?.price ? parseFloat(info.price) : 0,
           delivery_date: lead.delivery_date,
           delivery_time: lead.delivery_time || null,
-          status: lead.truck_assignments.length > 0 ? 'assigned' : 'pending',
+          status: lead.truck_assignments.length > 0 ? 
+            (() => {
+              const assignment = lead.truck_assignments[0];
+              console.log(`🔍 Заказ ${lead.lead_id}: truck_assignment status = ${assignment?.status}`);
+              if (assignment?.status === 'active') return 'assigned';
+              if (assignment?.status === 'accepted') return 'accepted';
+              if (assignment?.status === 'completed') return 'completed';
+              if (assignment?.status === 'cancelled') return 'cancelled';
+              return assignment?.status || 'assigned';
+            })() : 'pending',
           driver: {
             id: driver_id,
             name: 'Водитель',
@@ -140,34 +146,87 @@ export async function PUT(request: NextRequest) {
     // Обновляем заказ в таблице leads через truck_assignments
     const updateData: any = {};
     
-    if (status === 'accepted') {
-      updateData.accepted_at = new Date();
-    } else if (status === 'started') {
-      updateData.started_at = new Date();
-    } else if (status === 'completed') {
-      updateData.completed_at = new Date();
-    } else if (status === 'cancelled') {
-      updateData.cancelled_at = new Date();
-      updateData.cancellation_reason = data.cancellation_reason || 'Отменено водителем';
-    }
-
+    // Обновляем статус и добавляем заметки
+    updateData.status = status;
+    
     if (driver_notes) {
-      updateData.driver_notes = driver_notes;
+      updateData.notes = driver_notes;
     }
 
-    // Обновляем truck_assignment
-    const updatedAssignment = await prisma.truckAssignment.updateMany({
+    // Сначала находим truck_assignment для этого lead_id
+    const truckAssignment = await prisma.truckAssignment.findFirst({
       where: {
-        lead_id: BigInt(id),
-        status: 'active'
+        lead_id: BigInt(id)
+      }
+    });
+
+    console.log(`🔍 Найден truck_assignment для заказа ${id}:`, truckAssignment?.id, truckAssignment?.status);
+
+    if (!truckAssignment) {
+      return NextResponse.json(
+        { success: false, error: 'Назначение не найдено' },
+        { status: 404 }
+      );
+    }
+
+    console.log(`📝 Обновляем truck_assignment ${truckAssignment.id} на статус:`, status);
+
+    // Обновляем truck_assignment по его ID
+    const updatedAssignment = await prisma.truckAssignment.update({
+      where: {
+        id: truckAssignment.id
       },
       data: updateData
     });
 
+    console.log(`✅ Обновлен truck_assignment ${updatedAssignment.id} со статусом:`, updatedAssignment.status);
+
+    // Если заказ был обновлен, отправляем webhook в n8n
+    if (updatedAssignment) {
+      try {
+        // Получаем информацию о заказе для webhook
+        const lead = await prisma.lead.findUnique({
+          where: { lead_id: BigInt(id) },
+          include: {
+            truck_assignments: {
+              where: { status: 'active' },
+              take: 1
+            }
+          }
+        });
+
+        if (lead && lead.truck_assignments.length > 0) {
+          const assignment = lead.truck_assignments[0];
+          const info = lead.info as any;
+
+          await notifyOrderStatusChange(
+            id,
+            status,
+            {
+              id: assignment.driver_id?.toString() || '',
+              name: 'Водитель'
+            },
+            {
+              customer_name: info?.name || '',
+              customer_phone: info?.phone || '',
+              customer_address: info?.delivery_address || '',
+              total_amount: info?.price ? parseFloat(info.price) : 0,
+              delivery_date: lead.delivery_date?.toISOString().split('T')[0] || '',
+              delivery_time: lead.delivery_time || ''
+            },
+            driver_notes
+          );
+        }
+      } catch (webhookError) {
+        console.error('Ошибка отправки webhook:', webhookError);
+        // Не прерываем выполнение, если webhook не удался
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Заказ обновлен',
-      updated: updatedAssignment.count > 0
+      updated: true
     });
 
   } catch (error) {

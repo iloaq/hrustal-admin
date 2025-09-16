@@ -156,9 +156,8 @@ export default function LogisticsDashboard() {
     const statusConfig = {
       new: { color: 'bg-gray-100 text-gray-800', text: 'Новый' },
       assigned: { color: 'bg-yellow-100 text-yellow-800', text: 'Назначен' },
-      accepted: { color: 'bg-blue-100 text-blue-800', text: 'Принят' },
-      in_progress: { color: 'bg-orange-100 text-orange-800', text: 'В пути' },
-      completed: { color: 'bg-green-100 text-green-800', text: 'Завершен' },
+      accepted: { color: 'bg-orange-100 text-orange-800', text: 'Принят водителем' },
+      completed: { color: 'bg-green-100 text-green-800', text: 'Доставлен' },
       cancelled: { color: 'bg-red-100 text-red-800', text: 'Отменен' }
     };
 
@@ -179,7 +178,7 @@ export default function LogisticsDashboard() {
     total: orders.length,
     new: orders.filter(o => o.status === 'new').length,
     assigned: orders.filter(o => o.status === 'assigned').length,
-    in_progress: orders.filter(o => o.status === 'in_progress').length,
+    accepted: orders.filter(o => o.status === 'accepted').length,
     completed: orders.filter(o => o.status === 'completed').length
   };
 
@@ -235,19 +234,19 @@ export default function LogisticsDashboard() {
             <div className="text-gray-600">Назначены</div>
           </div>
           <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="text-2xl font-bold text-orange-600">{orderStats.in_progress}</div>
-            <div className="text-gray-600">В пути</div>
+            <div className="text-2xl font-bold text-orange-600">{orderStats.accepted}</div>
+            <div className="text-gray-600">Приняты водителем</div>
           </div>
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="text-2xl font-bold text-green-600">{orderStats.completed}</div>
-            <div className="text-gray-600">Завершены</div>
+            <div className="text-gray-600">Доставлены</div>
           </div>
         </div>
 
         {/* Filter */}
         <div className="mb-6">
           <div className="flex space-x-2">
-            {['all', 'new', 'assigned', 'accepted', 'in_progress', 'completed'].map((status) => (
+            {['all', 'new', 'assigned', 'accepted', 'completed'].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilterStatus(status)}

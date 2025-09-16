@@ -3,6 +3,44 @@ import { PrismaClient } from '@/generated/prisma';
 
 const prisma = new PrismaClient();
 
+export async function DELETE(request: NextRequest) {
+  try {
+    // Удаляем все тестовые заказы
+    const deletedCount = await prisma.lead.deleteMany({
+      where: {
+        name: {
+          startsWith: 'Тест'
+        }
+      }
+    });
+
+    // Также удаляем связанные truck_assignments
+    await prisma.truckAssignment.deleteMany({
+      where: {
+        lead: {
+          name: {
+            startsWith: 'Тест'
+          }
+        }
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Удалено ${deletedCount.count} тестовых заказов`
+    });
+
+  } catch (error: any) {
+    console.error('Ошибка удаления тестовых заказов:', error);
+    return NextResponse.json(
+      { success: false, error: 'Ошибка сервера при удалении тестовых заказов', details: error.message },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const today = new Date();
