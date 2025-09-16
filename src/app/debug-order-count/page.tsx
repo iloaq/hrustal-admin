@@ -108,10 +108,10 @@ export default function DebugOrderCountPage() {
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <h2 className="text-xl font-semibold mb-4">🗺️ Заказы по районам</h2>
               <div className="space-y-2">
-                {Object.entries(analysis.leads_by_region).map(([region, leads]: [string, any[]]) => (
+                {Object.entries(analysis.leads_by_region).map(([region, leads]) => (
                   <div key={region} className="flex justify-between items-center p-3 bg-gray-50 rounded">
                     <span className="font-medium">{region}</span>
-                    <span className="text-sm text-gray-600">{leads.length} заказов</span>
+                    <span className="text-sm text-gray-600">{(leads as any[]).length} заказов</span>
                   </div>
                 ))}
               </div>
@@ -121,10 +121,10 @@ export default function DebugOrderCountPage() {
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <h2 className="text-xl font-semibold mb-4">🚛 Заказы по машинам</h2>
               <div className="space-y-2">
-                {Object.entries(analysis.leads_by_truck).map(([truck, leads]: [string, any[]]) => (
+                {Object.entries(analysis.leads_by_truck).map(([truck, leads]) => (
                   <div key={truck} className="flex justify-between items-center p-3 bg-gray-50 rounded">
                     <span className="font-medium">{truck}</span>
-                    <span className="text-sm text-gray-600">{leads.length} заказов</span>
+                    <span className="text-sm text-gray-600">{(leads as any[]).length} заказов</span>
                   </div>
                 ))}
               </div>
@@ -134,10 +134,10 @@ export default function DebugOrderCountPage() {
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <h2 className="text-xl font-semibold mb-4">📋 Заказы по статусам</h2>
               <div className="space-y-2">
-                {Object.entries(analysis.leads_by_status).map(([status, leads]: [string, any[]]) => (
+                {Object.entries(analysis.leads_by_status).map(([status, leads]) => (
                   <div key={status} className="flex justify-between items-center p-3 bg-gray-50 rounded">
                     <span className="font-medium">{status}</span>
-                    <span className="text-sm text-gray-600">{leads.length} заказов</span>
+                    <span className="text-sm text-gray-600">{(leads as any[]).length} заказов</span>
                   </div>
                 ))}
               </div>
