@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { notifyOrderStatusChange, notifyPaymentStatusChange } from '@/lib/webhook';
+import { notifyOrderStatusChange, notifyPaymentStatusChange } from '../../../lib/webhook';
 
 export async function POST(request: NextRequest) {
   try {

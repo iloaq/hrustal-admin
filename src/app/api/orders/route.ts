@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
-import { notifyOrderStatusChange } from '@/lib/webhook';
+import { notifyOrderStatusChange } from '../../../lib/webhook';
 
 const prisma = new PrismaClient();
 
