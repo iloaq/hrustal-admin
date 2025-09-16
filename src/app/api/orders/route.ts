@@ -85,11 +85,11 @@ export async function GET(request: NextRequest) {
         // Проверяем, назначен ли заказ на машину водителя
         const isAssignedToDriverTruck = driverTruck && assignedTruck === driverTruck;
         
-        // Исключаем заказы со статусом 'completed' или 'cancelled'
-        const isCompleted = assignment?.status === 'completed' || assignment?.status === 'cancelled';
+        // Исключаем заказы со статусом 'completed' или 'cancelled' ИЛИ с dotavleno=true
+        const isCompleted = assignment?.status === 'completed' || assignment?.status === 'cancelled' || lead.dotavleno === true;
         
         const info = typeof lead.info === 'string' ? JSON.parse(lead.info) : lead.info;
-        console.log(`🔍 Заказ ${lead.lead_id}: район=${info?.region}, назначенная_машина=${assignedTruck}, машина_водителя=${driverTruck}, isAssignedToDriverTruck=${isAssignedToDriverTruck}, status=${assignment?.status}, isCompleted=${isCompleted}`);
+        console.log(`🔍 Заказ ${lead.lead_id}: район=${info?.region}, назначенная_машина=${assignedTruck}, машина_водителя=${driverTruck}, isAssignedToDriverTruck=${isAssignedToDriverTruck}, status=${assignment?.status}, dotavleno=${lead.dotavleno}, isCompleted=${isCompleted}`);
         
         return isAssignedToDriverTruck && !isCompleted;
       });
@@ -182,6 +182,21 @@ export async function PUT(request: NextRequest) {
     
     if (driver_notes) {
       updateData.notes = driver_notes;
+    }
+
+    // Также обновляем поле dotavleno в таблице leads для совместимости с логистикой
+    if (status === 'completed') {
+      await prisma.lead.update({
+        where: { lead_id: BigInt(id) },
+        data: { dotavleno: true }
+      });
+      console.log(`✅ Обновлено поле dotavleno=true для заказа ${id} в таблице leads`);
+    } else if (status === 'cancelled') {
+      await prisma.lead.update({
+        where: { lead_id: BigInt(id) },
+        data: { dotavleno: false }
+      });
+      console.log(`✅ Обновлено поле dotavleno=false для заказа ${id} в таблице leads`);
     }
 
     // Сначала находим truck_assignment для этого lead_id

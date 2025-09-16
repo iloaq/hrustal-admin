@@ -160,6 +160,7 @@ export default function DebugOrderCountPage() {
                         <div className="text-sm">
                           {!lead.isAssignedToDriverTruck && <span className="text-red-600">❌ Не его машина</span>}
                           {lead.isCompleted && <span className="text-orange-600">⏹️ Завершен</span>}
+                          {lead.dotavleno && <span className="text-green-600">✅ Доставлено (dotavleno)</span>}
                         </div>
                       </div>
                     </div>

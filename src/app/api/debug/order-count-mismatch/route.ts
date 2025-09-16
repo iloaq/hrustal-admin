@@ -113,8 +113,8 @@ export async function GET(request: NextRequest) {
       // Проверяем, назначен ли заказ на машину водителя
       const isAssignedToDriverTruck = driverTruck && assignedTruck === driverTruck;
       
-      // Исключаем заказы со статусом 'completed' или 'cancelled'
-      const isCompleted = assignment?.status === 'completed' || assignment?.status === 'cancelled';
+      // Исключаем заказы со статусом 'completed' или 'cancelled' ИЛИ с dotavleno=true
+      const isCompleted = assignment?.status === 'completed' || assignment?.status === 'cancelled' || lead.dotavleno === true;
       
       const leadInfo = {
         lead_id: lead.lead_id.toString(),
