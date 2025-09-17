@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../lib/prisma';
 import { notifyOrderStatusChange } from '../../../lib/webhook';
 import { invalidateCache } from '../leads/cache';
 
@@ -175,7 +175,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const data = await request.json();
-    const { id, status, driver_notes } = data;
+    const { id, status, driver_notes, driver_id } = data;
 
     if (!id || !status) {
       return NextResponse.json(
@@ -301,7 +301,7 @@ export async function PUT(request: NextRequest) {
             id,
             status,
             {
-              id: assignment.driver_id?.toString() || '',
+              id: driver_id || '',
               name: 'Водитель'
             },
             {

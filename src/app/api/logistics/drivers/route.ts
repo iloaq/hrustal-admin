@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../../lib/prisma';
 
 
 export async function GET(request: Request) {
@@ -163,7 +163,8 @@ export async function POST(request: Request) {
         login,
         license_number,
         status,
-        is_active: true
+        is_active: true,
+        pin_code: '1234' // Генерируем PIN-код по умолчанию
       }
     });
 

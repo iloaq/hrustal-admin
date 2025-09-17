@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../lib/prisma';
 import { withCache, CacheKeys, invalidateCache } from './cache';
 
 // Функция для преобразования BigInt в обычные числа
