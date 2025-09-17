@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@/generated/prisma';
+import { prisma } from '@/lib/prisma';
 import { notifyOrderStatusChange } from '../../../lib/webhook';
 import { invalidateCache } from '../leads/cache';
-
-const prisma = new PrismaClient();
 
 // Вспомогательная функция для получения последнего назначения
 function getLatestAssignment(truckAssignments: any[]) {
@@ -95,6 +93,9 @@ export async function GET(request: NextRequest) {
         return isAssignedToDriverTruck && !isCompleted;
       });
 
+      console.log(`🔍 API ORDERS - Получено ${filteredLeads.length} заявок для водителя ${driver_id}`);
+      console.log(`🔍 API ORDERS - Пример truck_assignments:`, filteredLeads[0]?.truck_assignments);
+
       // Конвертируем leads в формат orders
       const orders = filteredLeads.map((lead: any) => {
         const info = typeof lead.info === 'string' ? JSON.parse(lead.info) : lead.info;
@@ -106,7 +107,16 @@ export async function GET(request: NextRequest) {
           customer_address: info?.delivery_address || '',
           region: info?.region || '',
           products: typeof lead.products === 'string' ? JSON.parse(lead.products) : lead.products || {},
-          total_amount: info?.price ? parseFloat(info.price) : 0,
+          total_amount: (() => {
+            // Приоритет: сначала lead.price, потом info.price
+            if (lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))) {
+              return Number(lead.price);
+            }
+            if (info?.price && !isNaN(parseFloat(info.price))) {
+              return parseFloat(info.price);
+            }
+            return 0;
+          })(),
           delivery_date: lead.delivery_date,
           delivery_time: lead.delivery_time || null,
           status: (() => {
@@ -115,7 +125,7 @@ export async function GET(request: NextRequest) {
             if (!assignment) return 'pending';
             if (assignment.status === 'active') return 'assigned';
             if (assignment.status === 'accepted') return 'accepted';
-            if (assignment.status === 'completed') return 'completed';
+            if (assignment.status === 'delivered') return 'completed'; // Маппинг обратно
             if (assignment.status === 'cancelled') return 'cancelled';
             return assignment.status || 'assigned';
           })(),
@@ -158,8 +168,6 @@ export async function GET(request: NextRequest) {
       { success: false, error: 'Внутренняя ошибка сервера' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -179,8 +187,18 @@ export async function PUT(request: NextRequest) {
     // Обновляем заказ в таблице leads через truck_assignments
     const updateData: any = {};
     
+    // Маппинг статусов из приложения водителя в статусы truck_assignments
+    let truckAssignmentStatus = status;
+    if (status === 'accepted') {
+      truckAssignmentStatus = 'accepted';
+    } else if (status === 'completed') {
+      truckAssignmentStatus = 'delivered'; // В truck_assignments используется 'delivered'
+    } else if (status === 'cancelled') {
+      truckAssignmentStatus = 'cancelled';
+    }
+    
     // Обновляем статус и добавляем заметки
-    updateData.status = status;
+    updateData.status = truckAssignmentStatus;
     
     if (driver_notes) {
       updateData.notes = driver_notes;
@@ -193,20 +211,12 @@ export async function PUT(request: NextRequest) {
         data: { dotavleno: true }
       });
       console.log(`✅ Обновлено поле dotavleno=true для заказа ${id} в таблице leads`);
-      
-      // Инвалидируем кэш логистики, чтобы изменения отобразились
-      invalidateCache('leads');
-      console.log(`🔄 Инвалидирован кэш leads для заказа ${id}`);
     } else if (status === 'cancelled') {
       await prisma.lead.update({
         where: { lead_id: BigInt(id) },
         data: { dotavleno: false }
       });
       console.log(`✅ Обновлено поле dotavleno=false для заказа ${id} в таблице leads`);
-      
-      // Инвалидируем кэш логистики, чтобы изменения отобразились
-      invalidateCache('leads');
-      console.log(`🔄 Инвалидирован кэш leads для заказа ${id}`);
     }
 
     // Сначала находим truck_assignment для этого lead_id
@@ -234,7 +244,9 @@ export async function PUT(request: NextRequest) {
     }
 
     console.log(`📝 Обновляем truck_assignment ${truckAssignment.id} на статус:`, status);
+    console.log(`📝 Маппинг статуса: ${status} -> ${truckAssignmentStatus}`);
     console.log(`📝 Данные для обновления:`, updateData);
+    console.log(`📝 ТЕКУЩИЙ статус в БД ПЕРЕД обновлением:`, truckAssignment.status);
 
     // Обновляем truck_assignment по его ID
     const updatedAssignment = await prisma.truckAssignment.update({
@@ -252,6 +264,20 @@ export async function PUT(request: NextRequest) {
       truck_name: updatedAssignment.truck_name,
       assigned_at: updatedAssignment.assigned_at
     });
+
+    // Инвалидируем кэш для всех изменений статуса
+    invalidateCache('leads');
+    invalidateCache('truck_assignments');
+    invalidateCache('orders');
+    console.log(`🔄 Инвалидирован кэш для заказа ${id} (статус: ${truckAssignmentStatus})`);
+
+    // Проверяем, что статус действительно сохранился
+    const verifyAssignment = await prisma.truckAssignment.findUnique({
+      where: { id: truckAssignment.id }
+    });
+    console.log(`🔍 КРИТИЧЕСКАЯ ПРОВЕРКА - статус в БД СРАЗУ после обновления: ${verifyAssignment?.status}`);
+    
+    // Убрана отложенная проверка - не нужна
 
     // Если заказ был обновлен, отправляем webhook в n8n
     if (updatedAssignment) {
@@ -282,7 +308,16 @@ export async function PUT(request: NextRequest) {
               customer_name: info?.name || '',
               customer_phone: info?.phone || '',
               customer_address: info?.delivery_address || '',
-              total_amount: info?.price ? parseFloat(info.price) : 0,
+              total_amount: (() => {
+                // Приоритет: сначала lead.price, потом info.price
+                if (lead.price && Number(lead.price) > 0 && !isNaN(Number(lead.price))) {
+                  return Number(lead.price);
+                }
+                if (info?.price && !isNaN(parseFloat(info.price))) {
+                  return parseFloat(info.price);
+                }
+                return 0;
+              })(),
               delivery_date: lead.delivery_date?.toISOString().split('T')[0] || '',
               delivery_time: lead.delivery_time || ''
             },
@@ -307,8 +342,6 @@ export async function PUT(request: NextRequest) {
       { success: false, error: 'Внутренняя ошибка сервера' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -372,7 +405,5 @@ export async function POST(request: NextRequest) {
       { success: false, error: 'Внутренняя ошибка сервера' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

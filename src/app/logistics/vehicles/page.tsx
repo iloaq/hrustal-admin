@@ -30,16 +30,22 @@ export default function VehiclesPage() {
 
   const loadVehicles = async () => {
     try {
+      console.log('🚛 Начинаем загрузку машин...');
       setLoading(true);
       const response = await fetch('/api/logistics/vehicles');
+      console.log('🚛 Ответ сервера:', response.status);
       const data = await response.json();
-      
+      console.log('🚛 Данные:', data);
+
       if (data.success) {
         setVehicles(data.vehicles);
+        console.log('✅ Машины загружены:', data.vehicles.length);
       } else {
+        console.error('❌ Ошибка в данных:', data.error);
         setError(data.error || 'Ошибка загрузки машин');
       }
     } catch (err) {
+      console.error('❌ Ошибка подключения:', err);
       setError('Ошибка подключения к серверу');
     } finally {
       setLoading(false);
@@ -91,7 +97,7 @@ export default function VehiclesPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">🚛 Управление машинами</h1>
               <p className="text-gray-600 mt-2">Редактирование информации, привязка водителей и районов</p>
-            </div>
+      </div>
             <button
               onClick={openCreateModal}
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
@@ -101,8 +107,8 @@ export default function VehiclesPage() {
               </svg>
               <span>Создать машину</span>
             </button>
-          </div>
         </div>
+      </div>
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -113,14 +119,14 @@ export default function VehiclesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {vehicles.map((vehicle) => (
             <div key={vehicle.id} className="bg-white rounded-lg shadow-sm border p-6">
-              <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">{vehicle.name}</h3>
                 <span className={`px-2 py-1 rounded text-xs ${
                   vehicle.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                 }`}>
                   {vehicle.is_active ? 'Активна' : 'Неактивна'}
-                </span>
-              </div>
+          </span>
+        </div>
 
               <div className="space-y-2 mb-4">
                 <p className="text-sm text-gray-600">
@@ -132,34 +138,34 @@ export default function VehiclesPage() {
                 <p className="text-sm text-gray-600">
                   <span className="font-medium">Вместимость:</span> {vehicle.capacity ? `${vehicle.capacity} л` : 'Не указана'}
                 </p>
-              </div>
+            </div>
 
               <div className="flex items-center justify-between mb-4">
                 <div className="text-sm text-gray-600">
                   <span className="font-medium">Водителей:</span> {vehicle.drivers.length}
-                </div>
+                    </div>
                 <div className="text-sm text-gray-600">
                   <span className="font-medium">Районов:</span> {vehicle.districts.length}
-                </div>
-              </div>
+                  </div>
+          </div>
 
               <div className="flex items-center justify-between">
                 <span className={`text-sm ${
                   vehicle.is_available ? 'text-green-600' : 'text-yellow-600'
                 }`}>
                   {vehicle.is_available ? '✅ Доступна' : '⚠️ Недоступна'}
-                </span>
+                  </span>
                 
-                <button
+          <button
                   onClick={() => openEditModal(vehicle.id)}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
                 >
                   Редактировать
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+          </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
 
         {vehicles.length === 0 && (
           <div className="text-center py-12">

@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@/generated/prisma';
+import { prisma } from '@/lib/prisma';
 import { withCache, CacheKeys, invalidateCache } from './cache';
-
-const prisma = new PrismaClient();
 
 // Функция для преобразования BigInt в обычные числа
 function serializeLeads(leads: any[]) {
@@ -48,16 +46,27 @@ async function createAssignmentForLead(lead: any) {
       return null;
     }
     
-    // Проверяем, не назначена ли уже машина
+    // Проверяем, не назначена ли уже машина (любой статус)
     const existingAssignment = await prisma.truckAssignment.findFirst({
       where: {
         lead_id: BigInt(lead.lead_id),
-        status: 'active'
+        delivery_date: lead.delivery_date || new Date()
       }
     });
     
-    // ВАЖНО: Если машина уже назначена, НЕ ИЗМЕНЯЕМ её
-    if (existingAssignment && existingAssignment.truck_name && existingAssignment.truck_name.trim() !== '') {
+    // ВАЖНО: Если машина уже назначена или заказ в работе, НЕ ИЗМЕНЯЕМ её
+    if (existingAssignment && 
+        existingAssignment.truck_name && 
+        existingAssignment.truck_name.trim() !== '') {
+      console.log(`⚠️ Пропускаем автоназначение для заказа ${lead.lead_id} - уже назначена машина ${existingAssignment.truck_name} (статус: ${existingAssignment.status})`);
+      return existingAssignment;
+    }
+    
+    // ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА: Если статус не 'active', то заказ в работе у водителя - НЕ ТРОГАЕМ
+    if (existingAssignment && 
+        existingAssignment.status && 
+        existingAssignment.status !== 'active') {
+      console.log(`⚠️ Пропускаем автоназначение для заказа ${lead.lead_id} - заказ в работе (статус: ${existingAssignment.status})`);
       return existingAssignment;
     }
     
@@ -77,8 +86,8 @@ async function createAssignmentForLead(lead: any) {
           },
           update: {
             truck_name: 'Машина 6',
-            delivery_time: lead.delivery_time || '',
-            status: 'active'
+            delivery_time: lead.delivery_time || ''
+            // НЕ обновляем статус - оставляем существующий
           },
           create: {
             lead_id: BigInt(lead.lead_id),
@@ -99,8 +108,8 @@ async function createAssignmentForLead(lead: any) {
           },
           update: {
             truck_name: 'Машина 5',
-            delivery_time: lead.delivery_time || '',
-            status: 'active'
+            delivery_time: lead.delivery_time || ''
+            // НЕ обновляем статус - оставляем существующий
           },
           create: {
             lead_id: BigInt(lead.lead_id),
@@ -162,8 +171,8 @@ async function createAssignmentForLead(lead: any) {
       },
       update: {
         truck_name: assignedTruck,
-        delivery_time: lead.delivery_time || '',
-        status: 'active'
+        delivery_time: lead.delivery_time || ''
+        // НЕ обновляем статус - оставляем существующий
       },
       create: {
         lead_id: BigInt(lead.lead_id),
@@ -246,10 +255,28 @@ export async function GET(request: Request) {
     
     // Пакетное автоназначение для оптимизации производительности
     const leadsNeedingAssignment = leads.filter((lead: any) => {
-      const hasActiveAssignment = lead.truck_assignments.length > 0 && 
-        lead.truck_assignments[0].truck_name && 
-        lead.truck_assignments[0].truck_name.trim() !== '';
-      return !hasActiveAssignment;
+      const hasAnyAssignment = lead.truck_assignments.length > 0;
+      if (!hasAnyAssignment) {
+        return true; // Нет назначений - нужно назначить
+      }
+      
+      // Если есть назначения, проверяем каждое
+      for (const assignment of lead.truck_assignments) {
+        // Если есть назначение с машиной - не назначаем
+        if (assignment.truck_name && assignment.truck_name.trim() !== '') {
+          console.log(`🔍 Заявка ${lead.lead_id} - ПРОПУСКАЕМ автоназначение (машина: ${assignment.truck_name}, статус: ${assignment.status})`);
+          return false;
+        }
+        
+        // ВАЖНО: Если статус не 'active', то заявка в работе у водителя - не назначаем
+        if (assignment.status && assignment.status !== 'active') {
+          console.log(`🔍 Заявка ${lead.lead_id} - ПРОПУСКАЕМ автоназначение (статус в работе: ${assignment.status})`);
+          return false;
+        }
+      }
+      
+      console.log(`🔍 Заявка ${lead.lead_id} - ТРЕБУЕТ автоназначения`);
+      return true; // Назначить если нет ни одного назначения с машиной или в работе
     });
     
     console.log(`GET /api/leads - Заявок требующих назначения: ${leadsNeedingAssignment.length}`);

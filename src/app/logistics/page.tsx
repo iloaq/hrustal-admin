@@ -439,6 +439,17 @@ interface Lead {
   na_zamenu?: boolean; // на замену
   price?: string; // цена
   route_exported_at?: string; // время экспорта в маршрутные листы
+  truck_assignments?: Array<{
+    id: number;
+    lead_id: string;
+    truck_name: string;
+    delivery_date: string;
+    delivery_time: string;
+    assigned_at: string;
+    assigned_by?: string;
+    status: 'active' | 'accepted' | 'delivered' | 'cancelled';
+    notes?: string;
+  }>;
 }
 
 // Вспомогательная функция для получения способа оплаты
@@ -496,6 +507,8 @@ export default function LogisticsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [groupBy, setGroupBy] = useState<GroupByType>('none');
   const [isEditing, setIsEditing] = useState(false); // Флаг для отключения автообновления
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [overrides, setOverrides] = useState<any[]>([]);
   
   // Используем useRef для хранения актуальной даты
   const currentDateRef = useRef(selectedDate);
@@ -516,10 +529,12 @@ export default function LogisticsPage() {
       .then(() => {
         console.log('Кэш очищен для новой даты:', selectedDate);
         fetchLeads(false, selectedDate);
+        loadVehiclesAndOverrides(); // Загружаем машины и переопределения
       })
       .catch((error) => {
         console.error('Ошибка очистки кэша:', error);
         fetchLeads(false, selectedDate);
+        loadVehiclesAndOverrides(); // Загружаем машины и переопределения
       });
     
     // Включаем автообновление через 3 секунд
@@ -583,6 +598,22 @@ export default function LogisticsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, leads.length]);
+
+  const loadVehiclesAndOverrides = async () => {
+    try {
+      // Загружаем машины
+      const vehiclesResponse = await fetch('/api/logistics/vehicles');
+      const vehiclesData = await vehiclesResponse.json();
+      if (vehiclesData.success) {
+        setVehicles(vehiclesData.vehicles);
+      }
+
+      // Переопределения теперь локальные - сбрасываем при смене даты
+      setOverrides([]);
+    } catch (error) {
+      console.error('Ошибка загрузки машин:', error);
+    }
+  };
 
   const fetchLeads = async (showRefreshing = false, dateOverride?: string) => {
     if (showRefreshing) {
@@ -753,6 +784,112 @@ export default function LogisticsPage() {
     });
     
     return productStats;
+  };
+
+  // Получить назначенную машину для региона
+  const getAssignedVehicle = (regionName: string) => {
+    // Проверяем переопределения
+    const override = overrides.find(o => o.region === regionName);
+    if (override) {
+      return vehicles.find(v => v.id === override.vehicle.id);
+    }
+
+    // Используем стандартное назначение по районам
+    const defaultMapping: {[key: string]: string} = {
+      'Центр': 'Машина 1',
+      'Вокзал': 'Машина 2', 
+      'Центр ПЗ': 'Машина 3',
+      'Вокзал ПЗ': 'Машина 4',
+      'Универсальная': 'Машина 5',
+      'Иные районы': 'Машина 6'
+    };
+
+    const defaultVehicleName = defaultMapping[regionName];
+    if (defaultVehicleName) {
+      return vehicles.find(v => v.name === defaultVehicleName);
+    }
+
+    return null;
+  };
+
+  // Создать переопределение региона
+  const createRegionOverride = async (regionName: string, vehicleId: string) => {
+    try {
+      // Временно сохраняем переопределение локально
+      const newOverride = {
+        id: Date.now().toString(),
+        region: regionName,
+        date: selectedDate,
+        vehicle: vehicles.find(v => v.id === vehicleId),
+        created_by: 'admin',
+        notes: `Переназначено из логистики`
+      };
+      
+      setOverrides(prev => [...prev.filter(o => o.region !== regionName), newOverride]);
+      console.log('✅ Переопределение создано для региона:', regionName);
+    } catch (error) {
+      console.error('❌ Ошибка создания переопределения:', error);
+    }
+  };
+
+  // Удалить переопределение региона
+  const deleteRegionOverride = async (regionName: string) => {
+    if (!confirm(`Сбросить назначение машины для региона "${regionName}"?`)) return;
+    
+    try {
+      setOverrides(prev => prev.filter(o => o.region !== regionName));
+      console.log('✅ Переопределение удалено для региона:', regionName);
+    } catch (error) {
+      console.error('❌ Ошибка удаления переопределения:', error);
+    }
+  };
+
+  // Получить статус заявки для подсветки
+  const getLeadStatus = (lead: Lead) => {
+    // Проверяем статус через truck_assignments (приоритет)
+    if (lead.truck_assignments && lead.truck_assignments.length > 0) {
+      const assignment = lead.truck_assignments[0];
+      
+      // Отладочная информация (можно убрать после тестирования)
+      // console.log(`🔍 Заявка ${lead.lead_id}: truck_status=${assignment.status}, dotavleno=${lead.dotavleno}`);
+      
+      if (assignment.status === 'delivered') {
+        return 'delivered'; // Доставлено - зеленый
+      }
+      if (assignment.status === 'accepted') {
+        return 'accepted'; // Принято - желтый
+      }
+      if (assignment.status === 'cancelled') {
+        return 'cancelled'; // Отменено - красный
+      }
+      if (assignment.status === 'active') {
+        return 'assigned'; // Назначено - обычный (даже если dotavleno: true)
+      }
+    }
+    
+    // Fallback на старую логику только если нет truck_assignments
+    if (lead.dotavleno) {
+      // console.log(`🔍 Заявка ${lead.lead_id}: fallback на dotavleno=true (нет truck_assignments)`);
+      return 'delivered'; // Доставлено - зеленый
+    }
+    
+    return 'assigned'; // Назначено - обычный
+  };
+
+  // Получить CSS классы для статуса заявки
+  const getLeadStatusClasses = (status: string) => {
+    switch (status) {
+      case 'delivered':
+        return 'border-l-4 border-l-green-500 bg-green-50';
+      case 'accepted':
+        return 'border-l-4 border-l-yellow-500 bg-yellow-50';
+      case 'cancelled':
+        return 'border-l-4 border-l-red-500 bg-red-50';
+      case 'assigned':
+        return '';
+      default:
+        return '';
+    }
   };
 
   // Группируем по регионам
@@ -1090,13 +1227,42 @@ export default function LogisticsPage() {
                 <p className="mt-2 text-sm sm:text-base text-gray-600">Распределение заявок по машинам и регионам</p>
               </div>
             <div className="flex items-center space-x-4 mt-4 sm:mt-0">
-              <button
+                <button
                 onClick={() => fetchLeads(true)}
                 disabled={refreshing}
                 className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:bg-gray-400 flex items-center space-x-2"
               >
                 <span>{refreshing ? '🔄' : '🔄'}</span>
                 <span>{refreshing ? 'Обновляем...' : 'Обновить'}</span>
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    setRefreshing(true);
+                    console.log('🗑️ Принудительная очистка кэша...');
+                    
+                    // Очищаем кэш на сервере
+                    await fetch('/api/leads/cache-clear', {
+                      method: 'POST'
+                    });
+                    
+                    console.log('✅ Кэш очищен, обновляем данные');
+                    
+                    // Обновляем данные с принудительным флагом
+                    await fetchLeads(false);
+                    
+                    console.log('✅ Данные обновлены');
+                  } catch (error) {
+                    console.error('❌ Ошибка принудительного обновления:', error);
+                  } finally {
+                    setRefreshing(false);
+                  }
+                }}
+                disabled={refreshing}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:bg-gray-400 flex items-center space-x-2"
+              >
+                <span>🗑️</span>
+                <span>Очистить кэш</span>
               </button>
               <div className="text-xs text-gray-500">
                 <div>Обновлено: {lastUpdate.toLocaleTimeString()}</div>
@@ -2024,6 +2190,56 @@ export default function LogisticsPage() {
                       {region.products.stakanchiki > 0 ? `Стаканчики: ${region.products.stakanchiki} шт.` : ''}
                     </div>
                   </div>
+                  
+                  {/* Назначенная машина и выбор */}
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span className="text-gray-600">Машина:</span>
+                      <span className="font-medium text-gray-900">
+                        {(() => {
+                          const assignedVehicle = getAssignedVehicle(region.name);
+                          const isOverridden = overrides.some(o => o.region === region.name);
+                          return (
+                            <span className={isOverridden ? 'text-orange-600' : 'text-blue-600'}>
+                              {assignedVehicle?.name || 'Не назначена'}
+                              {isOverridden && ' ⚠️'}
+                            </span>
+                          );
+                        })()}
+                      </span>
+                    </div>
+                    
+                    {/* Выбор машины */}
+                    <div className="flex gap-1">
+                      <select
+                        className="flex-1 text-xs border border-gray-300 rounded px-2 py-1 bg-white"
+                        value={getAssignedVehicle(region.name)?.id || ''}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            createRegionOverride(region.name, e.target.value);
+                          }
+                        }}
+                      >
+                        <option value="">Выберите машину</option>
+                        {vehicles.map((vehicle) => (
+                          <option key={vehicle.id} value={vehicle.id}>
+                            {vehicle.name} ({vehicle.license_plate})
+                          </option>
+                        ))}
+                      </select>
+                      
+                      {/* Кнопка сброса переопределения */}
+                      {overrides.some(o => o.region === region.name) && (
+                        <button
+                          onClick={() => deleteRegionOverride(region.name)}
+                          className="px-2 py-1 text-xs bg-red-100 text-red-600 hover:bg-red-200 rounded border"
+                          title="Сбросить назначение"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -2097,10 +2313,26 @@ export default function LogisticsPage() {
                       </tr>
                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                  {group.leads.map((lead) => (
-                    <tr key={lead.lead_id} className={`hover:bg-gray-50 ${lead.dotavleno ? 'border-l-4 border-l-green-500' : ''} ${lead.route_exported_at ? 'border-l-4 border-l-orange-400' : ''}`}>
+                  {group.leads.map((lead) => {
+                    const leadStatus = getLeadStatus(lead);
+                    const statusClasses = getLeadStatusClasses(leadStatus);
+                    const routeExportedClass = lead.route_exported_at ? 'border-r-4 border-r-orange-400' : '';
+                    
+                    return (
+                    <tr key={lead.lead_id} className={`hover:bg-gray-50 ${statusClasses} ${routeExportedClass}`}>
                       <td className="px-2 sm:px-6 py-2 text-sm font-medium text-gray-900">
-                            <div className="whitespace-nowrap">
+                            <div className="whitespace-nowrap flex items-center gap-2">
+                              {/* Индикатор статуса */}
+                              {leadStatus === 'delivered' && (
+                                <span className="w-2 h-2 bg-green-500 rounded-full" title="Доставлено"></span>
+                              )}
+                              {leadStatus === 'accepted' && (
+                                <span className="w-2 h-2 bg-yellow-500 rounded-full" title="Принято водителем"></span>
+                              )}
+                              {leadStatus === 'cancelled' && (
+                                <span className="w-2 h-2 bg-red-500 rounded-full" title="Отменено"></span>
+                              )}
+                              
                               <a 
                                 href={`https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}`}
                                 target="_blank"
@@ -2188,7 +2420,8 @@ export default function LogisticsPage() {
                             </select>
                           </td>
                         </tr>
-                      ))}
+                      );
+                    })}
                     </tbody>
                   </table>
                 </div>
@@ -2263,10 +2496,26 @@ export default function LogisticsPage() {
                         return addressA.localeCompare(addressB);
                       })
                     : filteredLeads
-                  ).map((lead) => (
-                    <tr key={lead.lead_id} className={`hover:bg-gray-50 ${lead.dotavleno ? 'border-l-4 border-l-green-500' : ''} ${lead.route_exported_at ? 'border-l-4 border-l-orange-400' : ''}`}>
+                  ).map((lead) => {
+                    const leadStatus = getLeadStatus(lead);
+                    const statusClasses = getLeadStatusClasses(leadStatus);
+                    const routeExportedClass = lead.route_exported_at ? 'border-r-4 border-r-orange-400' : '';
+                    
+                    return (
+                    <tr key={lead.lead_id} className={`hover:bg-gray-50 ${statusClasses} ${routeExportedClass}`}>
                       <td className="px-2 sm:px-6 py-2 text-sm font-medium text-gray-900">
-                            <div className="whitespace-nowrap">
+                            <div className="whitespace-nowrap flex items-center gap-2">
+                              {/* Индикатор статуса */}
+                              {leadStatus === 'delivered' && (
+                                <span className="w-2 h-2 bg-green-500 rounded-full" title="Доставлено"></span>
+                              )}
+                              {leadStatus === 'accepted' && (
+                                <span className="w-2 h-2 bg-yellow-500 rounded-full" title="Принято водителем"></span>
+                              )}
+                              {leadStatus === 'cancelled' && (
+                                <span className="w-2 h-2 bg-red-500 rounded-full" title="Отменено"></span>
+                              )}
+                              
                               <a 
                                 href={`https://hrustal.amocrm.ru/leads/detail/${lead.lead_id}`}
                                 target="_blank"
@@ -2354,7 +2603,8 @@ export default function LogisticsPage() {
                         </select>
                       </td>
                     </tr>
-                  ))}
+                  );
+                })}
                 </tbody>
               </table>
             </div>

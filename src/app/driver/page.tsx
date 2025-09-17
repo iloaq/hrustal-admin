@@ -128,11 +128,14 @@ export default function DriverPage() {
     if (!driver) return;
 
     try {
-      const response = await fetch(`/api/orders?driver_id=${driver.id}&date=${selectedDate}`);
+      const timestamp = `&_t=${Date.now()}`;
+      console.log(`🔍 ВОДИТЕЛЬ - Запрос заказов для водителя ${driver.id} на дату ${selectedDate}`);
+      const response = await fetch(`/api/orders?driver_id=${driver.id}&date=${selectedDate}${timestamp}`);
       const data = await response.json();
 
       if (response.ok) {
         console.log('📦 Загружены заказы:', data.orders);
+        console.log(`🔍 ВОДИТЕЛЬ - Статусы заказов:`, data.orders?.map((o: any) => `${o.id}:${o.status}`));
         console.log('📦 Времена доставки:', data.orders.map((o: any) => ({ name: o.customer_name, time: o.delivery_time })));
         setOrders(data.orders);
       }
@@ -156,7 +159,10 @@ export default function DriverPage() {
       });
 
       if (response.ok) {
-        loadOrders(); // Перезагружаем заказы
+        console.log(`✅ ВОДИТЕЛЬ - Статус заказа ${orderId} успешно обновлен на ${status}`);
+        
+        // Перезагружаем заказы сразу
+        loadOrders();
       }
     } catch (error) {
       console.error('Ошибка обновления статуса:', error);

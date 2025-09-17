@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '../../../../generated/prisma';
+import { prisma } from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // Аутентификация водителя по PIN-коду
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔐 Начало аутентификации водителя');
     const { pin_code } = await request.json();
+    console.log('🔐 Получен PIN-код:', pin_code);
     
     if (!pin_code) {
+      console.log('❌ PIN-код не предоставлен');
       return NextResponse.json(
         { error: 'PIN-код обязателен' },
         { status: 400 }
@@ -18,6 +20,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Ищем водителя по PIN-коду
+    console.log('🔍 Поиск водителя по PIN-коду...');
     const driver = await prisma.driver.findFirst({
       where: {
         pin_code,
@@ -38,8 +41,10 @@ export async function POST(request: NextRequest) {
         }
       }
     });
+    console.log('🔍 Результат поиска водителя:', driver ? `Найден: ${driver.name}` : 'Не найден');
     
     if (!driver) {
+      console.log('❌ Водитель не найден или неактивен');
       return NextResponse.json(
         { error: 'Неверный PIN-код или водитель неактивен' },
         { status: 401 }
@@ -100,13 +105,12 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('❌ Ошибка аутентификации водителя:', error);
+    console.error('❌ КРИТИЧЕСКАЯ ОШИБКА аутентификации водителя:', error);
+    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'N/A');
     return NextResponse.json(
-      { error: 'Ошибка сервера при аутентификации' },
+      { error: 'Ошибка сервера при аутентификации', details: error instanceof Error ? error.message : 'Неизвестная ошибка' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -193,8 +197,6 @@ export async function GET(request: NextRequest) {
       { error: 'Внутренняя ошибка сервера' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -237,7 +239,5 @@ export async function DELETE(request: NextRequest) {
       { error: 'Ошибка сервера при выходе' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

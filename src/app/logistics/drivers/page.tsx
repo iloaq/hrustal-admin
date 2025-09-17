@@ -120,6 +120,7 @@ export default function DriversManagementPage() {
 
       if (data.success) {
         setDistricts(data.districts);
+        setAvailableDistricts(data.districts);
       }
     } catch (error) {
       console.error('Ошибка загрузки районов:', error);
@@ -711,9 +712,21 @@ function EditDriverModal({ driver, districts, vehicles, onSave, onClose }: {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('📝 Отправляем данные водителя:', {
+      districts: formData.selectedDistricts,
+      vehicles: formData.selectedVehicles
+    });
+    
     onSave({
       id: driver.id,
-      ...formData
+      name: formData.name,
+      phone: formData.phone,
+      login: formData.login,
+      license_number: formData.license_number,
+      status: formData.status,
+      districts: formData.selectedDistricts,
+      vehicles: formData.selectedVehicles
     });
   };
 

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@/generated/prisma';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
 
 // GET /api/logistics/vehicles/[id] - получить информацию о машине
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -26,7 +25,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         },
         orders: {
           where: {
-            delivery_date: new Date().toISOString().split('T')[0]
+            delivery_date: new Date(new Date().toISOString().split('T')[0] + 'T00:00:00.000Z')
           }
         }
       }
