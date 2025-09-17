@@ -112,7 +112,7 @@ export default function PinAuth({ onAuth }: PinAuthProps) {
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 onKeyPress={handleKeyPress}
                 disabled={isBlocked}
-                className="block w-full px-4 py-3 text-center text-2xl font-mono tracking-widest border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-black"
+                className="block w-full px-4 py-3 text-center text-2xl font-mono tracking-widest border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed text-black bg-gray-100"
                 placeholder="••••"
                 maxLength={4}
                 autoFocus

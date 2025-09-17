@@ -245,7 +245,7 @@ export default function DriversManagementPage() {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
             />
           </div>
 
@@ -256,7 +256,7 @@ export default function DriversManagementPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
             >
               <option value="">Все</option>
               <option value="online">Онлайн</option>
@@ -272,7 +272,7 @@ export default function DriversManagementPage() {
             <select
               value={districtFilter}
               onChange={(e) => setDistrictFilter(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="block w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
             >
               <option value="">Все районы</option>
               {districts.map(district => (
@@ -789,7 +789,7 @@ function EditDriverModal({ driver, districts, vehicles, onSave, onClose }: {
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
                 required
               />
             </div>
@@ -802,7 +802,7 @@ function EditDriverModal({ driver, districts, vehicles, onSave, onClose }: {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
               />
             </div>
 
@@ -814,7 +814,7 @@ function EditDriverModal({ driver, districts, vehicles, onSave, onClose }: {
                 type="text"
                 value={formData.login}
                 onChange={(e) => setFormData(prev => ({ ...prev, login: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
                 required
               />
             </div>
@@ -827,7 +827,7 @@ function EditDriverModal({ driver, districts, vehicles, onSave, onClose }: {
                 type="text"
                 value={formData.license_number}
                 onChange={(e) => setFormData(prev => ({ ...prev, license_number: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
               />
             </div>
 
@@ -838,7 +838,7 @@ function EditDriverModal({ driver, districts, vehicles, onSave, onClose }: {
               <select
                 value={formData.status}
                 onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
               >
                 <option value="online">🟢 Онлайн</option>
                 <option value="offline">⚫ Оффлайн</option>

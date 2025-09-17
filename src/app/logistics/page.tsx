@@ -1395,7 +1395,7 @@ export default function LogisticsPage() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
+                className="block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-100"
               />
             </div>
             
@@ -1406,7 +1406,7 @@ export default function LogisticsPage() {
               <select
                 value={selectedTime}
                 onChange={(e) => setSelectedTime(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
+                className="block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-100"
               >
                 <option value="all">Все время</option>
                 <option value="Утро">Утро</option>
@@ -1422,7 +1422,7 @@ export default function LogisticsPage() {
               <select
                 value={selectedRegion}
                 onChange={(e) => setSelectedRegion(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
+                className="block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-100"
               >
                 <option value="all">Все регионы</option>
                 {regions.map(region => (
@@ -1438,7 +1438,7 @@ export default function LogisticsPage() {
               <select
                 value={selectedTruck}
                 onChange={(e) => setSelectedTruck(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
+                className="block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-100"
               >
                 <option value="all">Все машины</option>
                 <option value="">Не назначены</option>
@@ -1455,7 +1455,7 @@ export default function LogisticsPage() {
               <select
                 value={selectedPaymentStatus}
                 onChange={(e) => setSelectedPaymentStatus(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
+                className="block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-100"
               >
                 <option value="all">Все статусы</option>
                 <option value="0">❌ Не оплачено</option>
@@ -2212,7 +2212,7 @@ export default function LogisticsPage() {
                     {/* Выбор машины */}
                     <div className="flex gap-1">
                       <select
-                        className="flex-1 text-xs border border-gray-300 rounded px-2 py-1 bg-white"
+                        className="flex-1 text-xs border border-gray-600 rounded px-2 py-1 bg-gray-100"
                         value={getAssignedVehicle(region.name)?.id || ''}
                         onChange={(e) => {
                           if (e.target.value) {
@@ -2405,7 +2405,7 @@ export default function LogisticsPage() {
                             <select
                               value={lead.assigned_truck || ''}
                               onChange={(e) => handleAssignLead(lead.lead_id, e.target.value)}
-                              className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-0.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black whitespace-normal break-words"
+                              className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-0.5 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black bg-gray-100 whitespace-normal break-words"
                               style={{whiteSpace: 'normal', wordBreak: 'break-word'}}
                             >
                               <option value="">Не назначена</option>
@@ -2588,7 +2588,7 @@ export default function LogisticsPage() {
                         <select
                           value={lead.assigned_truck || ''}
                           onChange={(e) => handleAssignLead(lead.lead_id, e.target.value)}
-                                                        className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-0.5 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black whitespace-normal break-words"
+                                                        className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-0.5 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black bg-gray-100 whitespace-normal break-words"
                           style={{whiteSpace: 'normal', wordBreak: 'break-word'}}
                         >
                           <option value="">Не назначена</option>
