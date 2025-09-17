@@ -1201,7 +1201,7 @@ export default function LogisticsPage() {
   if (!Array.isArray(leads)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Ошибка загрузки данных</div>
+        <div className="text-xl text-gray-800">Ошибка загрузки данных</div>
       </div>
     );
   }
@@ -1224,7 +1224,7 @@ export default function LogisticsPage() {
                     </span>
                   )}
                 </h1>
-                <p className="mt-2 text-sm sm:text-base text-gray-600">Распределение заявок по машинам и регионам</p>
+                <p className="mt-2 text-sm sm:text-base text-gray-800">Распределение заявок по машинам и регионам</p>
               </div>
             <div className="flex items-center space-x-4 mt-4 sm:mt-0">
                 <button
@@ -1264,7 +1264,7 @@ export default function LogisticsPage() {
                 <span>🗑️</span>
                 <span>Очистить кэш</span>
               </button>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-700">
                 <div>Обновлено: {lastUpdate.toLocaleTimeString()}</div>
                 <div className="flex items-center space-x-1">
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -1280,7 +1280,7 @@ export default function LogisticsPage() {
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               🔍 Универсальный поиск
-              <span className="ml-2 text-xs text-gray-500">
+              <span className="ml-2 text-xs text-gray-700">
                 (Ctrl+K для фокуса, Esc для очистки)
               </span>
             </label>
@@ -1293,7 +1293,7 @@ export default function LogisticsPage() {
                 className="block w-full px-4 py-3 pl-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
@@ -1302,14 +1302,14 @@ export default function LogisticsPage() {
                   onClick={() => setSearchQuery('')}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
-                  <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5 text-gray-600 hover:text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               )}
             </div>
             {searchQuery && (
-              <div className="mt-2 text-sm text-gray-600">
+              <div className="mt-2 text-sm text-gray-800">
                 Найдено: <span className="font-medium">{filteredLeads.length}</span> из <span className="font-medium">{leads.length}</span> заявок
                 {filteredLeads.length > 0 && (
                   <span className="ml-2">
@@ -1395,7 +1395,7 @@ export default function LogisticsPage() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-100"
+                className="block w-full px-3 py-2 border border-gray-800 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-200"
               />
             </div>
             
@@ -1406,7 +1406,7 @@ export default function LogisticsPage() {
               <select
                 value={selectedTime}
                 onChange={(e) => setSelectedTime(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-100"
+                className="block w-full px-3 py-2 border border-gray-800 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-200"
               >
                 <option value="all">Все время</option>
                 <option value="Утро">Утро</option>
@@ -1422,7 +1422,7 @@ export default function LogisticsPage() {
               <select
                 value={selectedRegion}
                 onChange={(e) => setSelectedRegion(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-100"
+                className="block w-full px-3 py-2 border border-gray-800 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-200"
               >
                 <option value="all">Все регионы</option>
                 {regions.map(region => (
@@ -1438,7 +1438,7 @@ export default function LogisticsPage() {
               <select
                 value={selectedTruck}
                 onChange={(e) => setSelectedTruck(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-100"
+                className="block w-full px-3 py-2 border border-gray-800 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-200"
               >
                 <option value="all">Все машины</option>
                 <option value="">Не назначены</option>
@@ -1455,7 +1455,7 @@ export default function LogisticsPage() {
               <select
                 value={selectedPaymentStatus}
                 onChange={(e) => setSelectedPaymentStatus(e.target.value)}
-                className="block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-100"
+                className="block w-full px-3 py-2 border border-gray-800 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black bg-gray-200"
               >
                 <option value="all">Все статусы</option>
                 <option value="0">❌ Не оплачено</option>
@@ -1481,7 +1481,7 @@ export default function LogisticsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-2">Специализация машин по районам:</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs text-gray-600">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs text-gray-800">
                 <div className="flex items-center">
                   <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
                   <span>Машина 1 → Центр</span>
@@ -1510,7 +1510,7 @@ export default function LogisticsPage() {
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-2">Статусы оплаты:</h3>
-              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-800">
                 <div className="flex items-center">
                   <span className="mr-2">❌</span>
                   <span>Не оплачено</span>
@@ -1531,7 +1531,7 @@ export default function LogisticsPage() {
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-2">Статус доставки:</h3>
-              <div className="grid grid-cols-1 gap-2 text-xs text-gray-600">
+              <div className="grid grid-cols-1 gap-2 text-xs text-gray-800">
                 <div className="flex items-center">
                   <div className="w-4 h-4 bg-green-500 mr-2 rounded"></div>
                   <span>Доставлено (зеленая рамка слева)</span>
@@ -2212,7 +2212,7 @@ export default function LogisticsPage() {
                     {/* Выбор машины */}
                     <div className="flex gap-1">
                       <select
-                        className="flex-1 text-xs border border-gray-600 rounded px-2 py-1 bg-gray-100"
+                        className="flex-1 text-xs border border-gray-800 rounded px-2 py-1 bg-gray-200 text-black"
                         value={getAssignedVehicle(region.name)?.id || ''}
                         onChange={(e) => {
                           if (e.target.value) {
@@ -2220,9 +2220,9 @@ export default function LogisticsPage() {
                           }
                         }}
                       >
-                        <option value="">Выберите машину</option>
+                        <option value="" className="text-black">Выберите машину</option>
                         {vehicles.map((vehicle) => (
-                          <option key={vehicle.id} value={vehicle.id}>
+                          <option key={vehicle.id} value={vehicle.id} className="text-black">
                             {vehicle.name} ({vehicle.license_plate})
                           </option>
                         ))}
@@ -2274,40 +2274,40 @@ export default function LogisticsPage() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           ID
                         </th>
-                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Клиент
                         </th>
-                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Регион
                         </th>
-                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Адрес
                         </th>
-                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Продукты
                         </th>
-                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Объем
                         </th>
-                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Время
                         </th>
-                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Способ оплаты
                         </th>
-                        <th className="px-2 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 sm:px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Оплата
                         </th>
-                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Сумма сделки
                         </th>
-                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Комментарий
                         </th>
-                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                           Машина
                         </th>
                       </tr>
@@ -2347,7 +2347,7 @@ export default function LogisticsPage() {
                           <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <div>
                               <div className="font-medium whitespace-normal break-words max-w-[150px]">{lead.info?.name}</div>
-                              <div className="text-gray-500 text-xs whitespace-normal break-words max-w-[150px]">{lead.info?.phone}</div>
+                              <div className="text-gray-700 text-xs whitespace-normal break-words max-w-[150px]">{lead.info?.phone}</div>
                             </div>
                           </td>
                           <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
@@ -2405,7 +2405,7 @@ export default function LogisticsPage() {
                             <select
                               value={lead.assigned_truck || ''}
                               onChange={(e) => handleAssignLead(lead.lead_id, e.target.value)}
-                              className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-0.5 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black bg-gray-100 whitespace-normal break-words"
+                              className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-0.5 border border-gray-800 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black bg-gray-200 whitespace-normal break-words"
                               style={{whiteSpace: 'normal', wordBreak: 'break-word'}}
                             >
                               <option value="">Не назначена</option>
@@ -2441,10 +2441,10 @@ export default function LogisticsPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       ID
                     </th>
-                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Клиент
                     </th>
                     <th 
@@ -2453,13 +2453,13 @@ export default function LogisticsPage() {
                     >
                       Регион {groupBy !== 'none' && groupBy === 'region' && '↓'}
                     </th>
-                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Адрес
                     </th>
-                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Продукты
                     </th>
-                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Объем
                     </th>
                     <th 
@@ -2468,16 +2468,16 @@ export default function LogisticsPage() {
                     >
                       Время {groupBy !== 'none' && groupBy === 'time' && '↓'}
                     </th>
-                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Способ оплаты
                     </th>
                     <th className="px-2 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Оплачено
                     </th>
-                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Сумма сделки
                     </th>
-                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                       Комментарий
                     </th>
                     <th 
@@ -2530,7 +2530,7 @@ export default function LogisticsPage() {
                           <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
                             <div>
                               <div className="font-medium whitespace-normal break-words max-w-[150px]">{lead.info?.name}</div>
-                              <div className="text-gray-500 text-xs whitespace-normal break-words max-w-[150px]">{lead.info?.phone}</div>
+                              <div className="text-gray-700 text-xs whitespace-normal break-words max-w-[150px]">{lead.info?.phone}</div>
                             </div>
                           </td>
                       <td className="px-2 sm:px-6 py-2 text-sm text-gray-900">
@@ -2588,7 +2588,7 @@ export default function LogisticsPage() {
                         <select
                           value={lead.assigned_truck || ''}
                           onChange={(e) => handleAssignLead(lead.lead_id, e.target.value)}
-                                                        className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-0.5 border border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black bg-gray-100 whitespace-normal break-words"
+                                                        className="block w-full min-w-[140px] max-w-[260px] px-2 sm:px-3 py-0.5 border border-gray-800 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm text-black bg-gray-200 whitespace-normal break-words"
                           style={{whiteSpace: 'normal', wordBreak: 'break-word'}}
                         >
                           <option value="">Не назначена</option>

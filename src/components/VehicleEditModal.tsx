@@ -287,7 +287,7 @@ export default function VehicleEditModal({ vehicleId, isOpen, onClose, onVehicle
                             type="text"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100"
+                            className="w-full px-3 py-2 border border-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-200"
                           />
                         </div>
 
@@ -299,7 +299,7 @@ export default function VehicleEditModal({ vehicleId, isOpen, onClose, onVehicle
                             type="text"
                             value={formData.brand}
                             onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100"
+                            className="w-full px-3 py-2 border border-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-200"
                           />
                         </div>
 
@@ -311,7 +311,7 @@ export default function VehicleEditModal({ vehicleId, isOpen, onClose, onVehicle
                             type="text"
                             value={formData.license_plate}
                             onChange={(e) => setFormData({ ...formData, license_plate: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100"
+                            className="w-full px-3 py-2 border border-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-200"
                           />
                         </div>
 
@@ -323,7 +323,7 @@ export default function VehicleEditModal({ vehicleId, isOpen, onClose, onVehicle
                             type="number"
                             value={formData.capacity}
                             onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                            className="w-full px-3 py-2 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100"
+                            className="w-full px-3 py-2 border border-gray-800 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-200"
                           />
                         </div>
 

@@ -97,7 +97,7 @@ export default function PinAuth({ onAuth }: PinAuthProps) {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Вход в систему</h1>
-          <p className="text-gray-600">Введите PIN-код для доступа</p>
+          <p className="text-gray-800">Введите PIN-код для доступа</p>
         </div>
 
         <form onSubmit={handlePinSubmit} className="space-y-6">
@@ -144,7 +144,7 @@ export default function PinAuth({ onAuth }: PinAuthProps) {
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-700">
             PIN-коды для тестирования:<br />
             <span className="font-mono">1234</span> - Логист, <span className="font-mono">5678</span> - Производство
           </p>

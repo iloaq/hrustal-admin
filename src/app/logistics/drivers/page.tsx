@@ -231,7 +231,7 @@ export default function DriversManagementPage() {
       {/* Заголовок */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Управление водителями</h1>
-        <p className="text-gray-600">Контроль водителей, машин и доставок</p>
+        <p className="text-gray-800">Контроль водителей, машин и доставок</p>
       </div>
 
       {/* Фильтры и статистика */}
@@ -245,7 +245,7 @@ export default function DriversManagementPage() {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
+              className="block w-full px-3 py-2 border border-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-200"
             />
           </div>
 
@@ -256,7 +256,7 @@ export default function DriversManagementPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
+              className="block w-full px-3 py-2 border border-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-200"
             >
               <option value="">Все</option>
               <option value="online">Онлайн</option>
@@ -272,7 +272,7 @@ export default function DriversManagementPage() {
             <select
               value={districtFilter}
               onChange={(e) => setDistrictFilter(e.target.value)}
-              className="block w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
+              className="block w-full px-3 py-2 border border-gray-800 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-200"
             >
               <option value="">Все районы</option>
               {districts.map(district => (
@@ -367,28 +367,28 @@ export default function DriversManagementPage() {
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">{stats.total_drivers || 0}</div>
-              <div className="text-sm text-gray-500">Всего водителей</div>
-              <div className="text-xs text-gray-400 mt-1">Дата: {selectedDate}</div>
+              <div className="text-sm text-gray-700">Всего водителей</div>
+              <div className="text-xs text-gray-600 mt-1">Дата: {selectedDate}</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{stats.online || 0}</div>
-              <div className="text-sm text-gray-500">Онлайн</div>
+              <div className="text-sm text-gray-700">Онлайн</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-600">{stats.offline || 0}</div>
-              <div className="text-sm text-gray-500">Офлайн</div>
+              <div className="text-sm text-gray-700">Офлайн</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-600">{stats.broken_vehicle || 0}</div>
-              <div className="text-sm text-gray-500">Поломки</div>
+              <div className="text-sm text-gray-700">Поломки</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">{stats.total_assignments || 0}</div>
-              <div className="text-sm text-gray-500">Заказов</div>
+              <div className="text-sm text-gray-700">Заказов</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{stats.total_delivered || 0}</div>
-              <div className="text-sm text-gray-500">Доставлено</div>
+              <div className="text-sm text-gray-700">Доставлено</div>
             </div>
           </div>
         )}
@@ -397,11 +397,11 @@ export default function DriversManagementPage() {
       {/* Список водителей */}
       {loading ? (
         <div className="text-center py-8">
-          <div className="text-gray-500">Загрузка...</div>
+          <div className="text-gray-700">Загрузка...</div>
         </div>
       ) : drivers.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-8 text-center">
-          <div className="text-gray-500">Водители не найдены</div>
+          <div className="text-gray-700">Водители не найдены</div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -493,7 +493,7 @@ function DriverCard({ driver, onEdit, onDelete }: {
         {/* Основная информация */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
-            <div className="text-sm text-gray-500">Контакты:</div>
+            <div className="text-sm text-gray-700">Контакты:</div>
             <div className="font-medium">
               {driver.phone && (
                 <div className="text-sm">📞 {driver.phone}</div>
@@ -506,18 +506,18 @@ function DriverCard({ driver, onEdit, onDelete }: {
           </div>
 
           <div>
-            <div className="text-sm text-gray-500">Районы:</div>
+            <div className="text-sm text-gray-700">Районы:</div>
             <div className="font-medium">
               {driver.districts.length > 0 ? (
                 driver.districts.map(district => district.name).join(', ')
               ) : (
-                <span className="text-gray-400">Не назначены</span>
+                <span className="text-gray-600">Не назначены</span>
               )}
             </div>
           </div>
 
           <div>
-            <div className="text-sm text-gray-500">Машины:</div>
+            <div className="text-sm text-gray-700">Машины:</div>
             <div className="font-medium">
               {driver.vehicles.length > 0 ? (
                 driver.vehicles.map(vehicle => (
@@ -529,7 +529,7 @@ function DriverCard({ driver, onEdit, onDelete }: {
                   </div>
                 ))
               ) : (
-                <span className="text-gray-400">Не назначены</span>
+                <span className="text-gray-600">Не назначены</span>
               )}
             </div>
           </div>
@@ -539,23 +539,23 @@ function DriverCard({ driver, onEdit, onDelete }: {
         <div className="grid grid-cols-5 gap-4 mb-4">
           <div className="text-center">
             <div className="text-xl font-bold text-blue-600">{driver.stats.total}</div>
-            <div className="text-xs text-gray-500">Всего</div>
+            <div className="text-xs text-gray-700">Всего</div>
           </div>
           <div className="text-center">
             <div className="text-xl font-bold text-blue-500">{driver.stats.assigned}</div>
-            <div className="text-xs text-gray-500">Назначено</div>
+            <div className="text-xs text-gray-700">Назначено</div>
           </div>
           <div className="text-center">
             <div className="text-xl font-bold text-yellow-600">{driver.stats.started}</div>
-            <div className="text-xs text-gray-500">В работе</div>
+            <div className="text-xs text-gray-700">В работе</div>
           </div>
           <div className="text-center">
             <div className="text-xl font-bold text-green-600">{driver.stats.delivered}</div>
-            <div className="text-xs text-gray-500">Доставлено</div>
+            <div className="text-xs text-gray-700">Доставлено</div>
           </div>
           <div className="text-center">
             <div className="text-xl font-bold text-red-600">{driver.stats.broken}</div>
-            <div className="text-xs text-gray-500">Сломано</div>
+            <div className="text-xs text-gray-700">Сломано</div>
           </div>
         </div>
 
@@ -593,13 +593,13 @@ function DriverCard({ driver, onEdit, onDelete }: {
                     <div key={district.id} className="bg-blue-50 p-2 rounded text-sm">
                       📍 {district.name}
                       {district.description && (
-                        <div className="text-xs text-gray-500">{district.description}</div>
+                        <div className="text-xs text-gray-700">{district.description}</div>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-gray-500 text-sm">Районы не назначены</div>
+                <div className="text-gray-700 text-sm">Районы не назначены</div>
               )}
             </div>
 
@@ -634,7 +634,7 @@ function DriverCard({ driver, onEdit, onDelete }: {
                         </div>
                       </div>
                       {vehicle.capacity && (
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-gray-700 mt-1">
                           Вместимость: {vehicle.capacity} кг
                         </div>
                       )}
@@ -642,7 +642,7 @@ function DriverCard({ driver, onEdit, onDelete }: {
                   ))}
                 </div>
               ) : (
-                <div className="text-gray-500 text-sm">Машины не назначены</div>
+                <div className="text-gray-700 text-sm">Машины не назначены</div>
               )}
             </div>
 
@@ -682,7 +682,7 @@ function DriverCard({ driver, onEdit, onDelete }: {
                   ))}
                 </div>
               ) : (
-                <div className="text-gray-500 text-sm">Нет заказов на выбранную дату</div>
+                <div className="text-gray-700 text-sm">Нет заказов на выбранную дату</div>
               )}
             </div>
           </div>
@@ -773,7 +773,7 @@ function EditDriverModal({ driver, districts, vehicles, onSave, onClose }: {
       <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Редактировать водителя</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button onClick={onClose} className="text-gray-700 hover:text-gray-700">
             ✕
           </button>
         </div>
@@ -789,7 +789,7 @@ function EditDriverModal({ driver, districts, vehicles, onSave, onClose }: {
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-200"
                 required
               />
             </div>
@@ -802,7 +802,7 @@ function EditDriverModal({ driver, districts, vehicles, onSave, onClose }: {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-200"
               />
             </div>
 
@@ -814,7 +814,7 @@ function EditDriverModal({ driver, districts, vehicles, onSave, onClose }: {
                 type="text"
                 value={formData.login}
                 onChange={(e) => setFormData(prev => ({ ...prev, login: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-200"
                 required
               />
             </div>
@@ -827,7 +827,7 @@ function EditDriverModal({ driver, districts, vehicles, onSave, onClose }: {
                 type="text"
                 value={formData.license_number}
                 onChange={(e) => setFormData(prev => ({ ...prev, license_number: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-200"
               />
             </div>
 
@@ -838,7 +838,7 @@ function EditDriverModal({ driver, districts, vehicles, onSave, onClose }: {
               <select
                 value={formData.status}
                 onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-200"
               >
                 <option value="online">🟢 Онлайн</option>
                 <option value="offline">⚫ Оффлайн</option>
